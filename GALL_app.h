@@ -43,6 +43,8 @@ public:
 	void loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox);
 	void loadTrainPosFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox, std::vector<std::vector<cv::Point> >& vCenter);
 	void loadImFile(std::vector<string>& vFilenames);
+	bool localMaxima(cv::Mat src,cv::Mat &dst,int squareSize, std::vector<cv::Point>& locations);
+	int maxUsedValInHistogramData(cv::Mat src);
 
 	void createDirectory(string path)
 	{
