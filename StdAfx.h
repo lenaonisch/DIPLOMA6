@@ -36,6 +36,9 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QErrorMessage>
+#include <QImageReader>
+#include <QStandardPaths>
+#include <QScrollBar>
 
 #include <string_exception.h>
 // TODO: Установите здесь ссылки на дополнительные заголовки, требующиеся для программы

@@ -4,12 +4,9 @@
 #ifndef QT_TEST_H
 #define QT_TEST_H
 
-//#include <QtWidgets/QMainWindow>
-//#include <QFileDialog>
-//#include <QTextStream>
-//#include <QLabel>
-//#include <QDebug>
 #include "ui_qt_test.h"
+
+using namespace cv;
 
 class qt_test : public QMainWindow
 {
@@ -18,19 +15,28 @@ class qt_test : public QMainWindow
 public:
 
 	GALL_app gall_forest_app;
+	cv::Mat currentImage;
 
 	qt_test(QWidget *parent = 0);
 	~qt_test();
+	bool loadFile(const QString &fileName);
+	void scaleImage(double factor);
+	void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
 private:
 	Ui::qt_testClass ui;
+	double scaleFactor;
 public slots:
 	void on_actionOpen_triggered();
 	void on_actionLoad_config_file_triggered();
 	void on_actionTrain_triggered();
 	void on_actionShow_leaves_triggered();
 	void on_actionDetect_triggered();
-	//void on_btnRun_clicked();
+	void on_actionZoom_in_2_triggered();
+	void on_actionZoom_out_2_triggered();
+	void on_actionBatch_detect_triggered();
+	void on_actionTest_local_max_triggered();
+	void on_actionMean_shift_triggered();
 };
 
 #endif // QT_TEST_H
