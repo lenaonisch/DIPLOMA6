@@ -39,6 +39,9 @@
 #include <QImageReader>
 #include <QStandardPaths>
 #include <QScrollBar>
+#include <QMouseEvent>
+#include <QTreeWidgetItem>
+#include <QTreeWidget>
 
-#include <string_exception.h>
+#include <miscellaneous.h>
 // TODO: Установите здесь ссылки на дополнительные заголовки, требующиеся для программы

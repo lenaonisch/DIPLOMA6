@@ -19,3 +19,9 @@ public:
 
 
 };
+
+struct Results
+{
+	QList<int> classes; // if defined - than multiclass detection. size must be the same as rects's size
+	QList<cv::Rect> rects;
+};

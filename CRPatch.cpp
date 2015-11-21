@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cv;
 
-void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, std::vector<cv::Point>* vCenter) {
+void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, cv::Point * vCenter) {
 	// extract features
 	vector<cv::Mat> vImg; // uchar, CV_8UC1
 	extractFeatureChannels(img, vImg);
@@ -40,11 +40,11 @@ void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, 
 		vLPatches[label].back().roi.width = width;  vLPatches[label].back().roi.height = height; 
 
 		if(vCenter!=0) {
-			vLPatches[label].back().center.resize(vCenter->size());
-			for(unsigned int c = 0; c<vCenter->size(); ++c) {
-				vLPatches[label].back().center[c].x = point[0] + offx - (*vCenter)[c].x;
-				vLPatches[label].back().center[c].y = point[1] + offy - (*vCenter)[c].y;
-			}
+			//vLPatches[label].back().center.resize(vCenter->size());
+			//for(unsigned int c = 0; c<vCenter->size(); ++c) {
+				vLPatches[label].back().center.x = point[0] + offx - (*vCenter).x;
+				vLPatches[label].back().center.y = point[1] + offy - (*vCenter).y;
+			//}
 		}
 
 		vLPatches[label].back().vPatch.resize(vImg.size());

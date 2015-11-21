@@ -65,6 +65,8 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 			for(vector<const LeafNode*>::const_iterator itL = result.begin(); itL!=result.end(); ++itL)
 			{
 
+				for (vector<float>::const_iterator pfgi = pfg.begin(); pfgi!=pfg.end(); ++pfgi)
+				{
 				// To speed up the voting, one can vote only for patches 
 			        // with a probability for foreground > 0.5
 			        // 
@@ -89,6 +91,7 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 					}
 
 				 // } // end if
+				}
 
 			}
 

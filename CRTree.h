@@ -26,12 +26,11 @@ struct LeafNode {
 
 	// IO functions
 	void show(int delay, int width, int height); 
-	void print() const {
-		std::cout << "Leaf " << vCenter.size() << " "  << pfg << std::endl;
-	}
 
 	// Probability of foreground
-	float pfg;
+	std::vector<float> pfg; //probabilities for different classes of objects  pfg[0] - for 1st class, pfg[1] - for 2nd class etc.
+	// Vectors for sizes of objects of different classes. vSize[i] - for classes, vSize[i][j] - for patches
+	std::vector<std::vector<cv::Size> > vSize;
 	// Vectors from object center to training patches
 	std::vector<std::vector<cv::Point> > vCenter;	
 };

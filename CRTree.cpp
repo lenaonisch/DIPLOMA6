@@ -6,9 +6,6 @@
 #pragma once
 #include "stdafx.h"
 #include "CRTree.h"
-//#include <fstream>
-//#include <highgui.h>
-//#include <algorithm>
 
 using namespace std;
 
@@ -233,7 +230,10 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 	++num_leaf;
 }
 
-bool CRTree::optimizeTest(vector<vector<const PatchFeature*> >& SetA, vector<vector<const PatchFeature*> >& SetB, const vector<vector<const PatchFeature*> >& TrainSet, int* test, unsigned int iter, unsigned int measure_mode) {
+bool CRTree::optimizeTest  (vector<vector<const PatchFeature*> >& SetA, 
+							vector<vector<const PatchFeature*> >& SetB, 
+							const vector<vector<const PatchFeature*> >& TrainSet, 
+							int* test, unsigned int iter, unsigned int measure_mode) {
 	
 	bool found = false;
 
@@ -453,8 +453,6 @@ double CRTree::InfGain(const vector<vector<const PatchFeature*> >& SetA, const v
 
 void LeafNode::show(int delay, int width, int height) {
 	char buffer[200];
-
-	print();
 
 	if(vCenter.size()>0) {
 		vector<IplImage*> iShow(vCenter[0].size());

@@ -27,6 +27,9 @@ public:
 	string trainnegfiles; // File with postive examples
 	int subsamples_neg;// Subset of neg images -1: all images
 	unsigned int samples_neg; // Samples from pos. examples
+	string classmap_file;
+	int num_of_classes; //number of classes
+	vector<string> classes; //class names
 
 	// offset for saving tree number
 	int off_tree;
@@ -36,13 +39,16 @@ public:
 
 	void loadConfig(string filename/*, int mode*/);
 	void run_train();
-	void run_detect();
+	void run_detect(QHash <QString, Results>& results);
 	void extract_Patches(CRPatch& Train, CvRNG* pRNG);
-	void detect(CRForestDetector& crDetect);
+	void detect(CRForestDetector& crDetect, QHash <QString, Results>& results);
 	void show();
 	void loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox);
-	void loadTrainPosFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox, std::vector<std::vector<cv::Point> >& vCenter);
-	void loadImFile(std::vector<string>& vFilenames);
+	void loadTrainPosFile(std::vector<string>& vFilenames, 
+						  std::vector<cv::Rect>& vBBox, 
+						  std::vector<cv::Point>& vCenter,
+						  std::vector<unsigned int> & vClassNums);
+	void loadImFile(QHash <QString, Results>& results);
 	bool localMaxima(cv::Mat src,cv::Mat &dst,int squareSize, std::vector<cv::Point>& locations);
 	int maxUsedValInHistogramData(cv::Mat src);
 
