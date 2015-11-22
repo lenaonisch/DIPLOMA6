@@ -26,6 +26,7 @@ public:
 private:
 	Ui::qt_testClass ui;
 	double scaleFactor;
+	void DisplayPositiveFiles();
 public slots:
 	void on_actionOpen_triggered();
 	void on_actionLoad_config_file_triggered();
@@ -37,6 +38,9 @@ public slots:
 	void on_actionBatch_detect_triggered();
 	void on_actionTest_local_max_triggered();
 	void on_actionMean_shift_triggered();
+	void on_btnAddPositive_clicked();
+	void on_treeResults_clicked();
+	
 };
 
 #endif // QT_TEST_H

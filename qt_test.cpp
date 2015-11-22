@@ -34,6 +34,8 @@ void qt_test::on_actionLoad_config_file_triggered()
 	{
 		gall_forest_app.loadConfig(filename/*, mode*/);
 
+		DisplayPositiveFiles();
+
 		string directory;
 		const size_t last_slash_idx = filename.rfind('/');
 		if (std::string::npos != last_slash_idx)
@@ -62,6 +64,18 @@ void qt_test::on_actionLoad_config_file_triggered()
 	}
 }
 
+void qt_test::DisplayPositiveFiles()
+{
+	QList<QTreeWidgetItem *> items;
+	for (int i = 0; i < 10; ++i)
+	{
+		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString("item %1").arg(i)));
+		for (int j = 0;j<2;j++)
+			next->addChild(new QTreeWidgetItem(QStringList(QString("item %1: %2").arg(i).arg(j))));
+		items.append(next);
+	}
+	ui.treeResults->insertTopLevelItems(0, items);
+}
 
 void qt_test::on_actionTrain_triggered()
 {
@@ -251,7 +265,21 @@ void qt_test::on_actionTest_local_max_triggered()
 	cv::imshow("Max", dst);
 }
 
+void qt_test::on_btnAddPositive_clicked()
+{
+	
+}
+
 void qt_test::on_actionMean_shift_triggered()
 {
 
+}
+
+void qt_test::on_treeResults_clicked()
+{
+	
+	QTreeWidgetItem * parent = ui.treeResults->currentItem()->parent();
+	QString text = parent->text(0);
+	QModelIndex model = ui.treeResults->currentIndex();
+	
 }
