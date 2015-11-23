@@ -18,7 +18,8 @@ CRTree::CRTree(const char* filename) {
 	int dummy;
 
 	ifstream in(filename);
-	if(in.is_open()) {
+	if(in.is_open()) 
+	{
 		// allocate memory for tree table
 		in >> max_depth;
 		num_nodes = (int)pow(2.0,int(max_depth+1))-1;
@@ -30,11 +31,12 @@ CRTree::CRTree(const char* filename) {
 		in >> num_leaf;
 		leaf = new LeafNode[num_leaf];
 
-		// number of center points per patch 
-		in >> num_cp;
+		// number of classes!!! 
+		in >> num_classes;
 
 		// read tree nodes
-		for(unsigned int n=0; n<num_nodes; ++n) {
+		for(unsigned int n=0; n<num_nodes; ++n) 
+		{
 			in >> dummy; in >> dummy;
 			for(unsigned int i=0; i<7; ++i, ++ptT) {
 				in >> *ptT;
@@ -43,18 +45,31 @@ CRTree::CRTree(const char* filename) {
 
 		// read tree leafs
 		LeafNode* ptLN = &leaf[0];
-		for(unsigned int l=0; l<num_leaf; ++l, ++ptLN) {
-			in >> dummy;
-			in >> ptLN->pfg;
-			
-			// number of positive patches
-			in >> dummy;
-			ptLN->vCenter.resize(dummy);
-			for(int i=0; i<dummy; ++i) {
-				ptLN->vCenter[i].resize(num_cp);
-				for(unsigned int k=0; k<num_cp; ++k) {
-					in >> ptLN->vCenter[i][k].x;
-					in >> ptLN->vCenter[i][k].y;
+		char symbol;
+		for(unsigned int l=0; l<num_leaf; ++l, ++ptLN) 
+		{
+			in >> dummy; // sequence number
+			ptLN->pfg.resize(num_classes);
+			ptLN->vCenter.resize(num_classes);
+			ptLN->vSize.resize(num_classes);
+			for (int p = 0; p < num_classes; p++) //  probabilities
+				in >> ptLN->pfg[p];
+				
+			// read centers and rectangle's sizes. For each patch there are 4 numbers!
+			for (int p = 0; p < num_classes; p++)
+			{
+				in >> symbol; // "|" symbol
+				in >> dummy;
+				ptLN->vCenter[p].resize(dummy);
+				ptLN->vSize[p].resize(dummy);
+				for(int i=0; i<dummy; ++i)
+				{
+					in >> symbol;
+					in >> ptLN->vCenter[p][i].x;
+					in >> ptLN->vCenter[p][i].y;
+					in >> ptLN->vSize[p][i].width;
+					in >> ptLN->vSize[p][i].height;
+					in >> symbol; 
 				}
 			}
 		}
@@ -78,7 +93,7 @@ bool CRTree::saveTree(const char* filename) const {
 	ofstream out(filename);
 	if(out.is_open()) {
 
-		out << max_depth << " " << num_leaf << " " << num_cp << endl;
+		out << max_depth << " " << num_leaf << " " << num_classes << endl;
 
 		// save tree nodes
 		int* ptT = &treetable[0];
@@ -101,15 +116,25 @@ bool CRTree::saveTree(const char* filename) const {
 
 		// save tree leafs
 		LeafNode* ptLN = &leaf[0];
-		for(unsigned int l=0; l<num_leaf; ++l, ++ptLN) {
-			out << l << " " << ptLN->pfg << " " << ptLN->vCenter.size() << " ";
-			
-			for(unsigned int i=0; i<ptLN->vCenter.size(); ++i) {
-				for(unsigned int k=0; k<ptLN->vCenter[i].size(); ++k) {
-					out << ptLN->vCenter[i][k].x << " " << ptLN->vCenter[i][k].y << " ";
+		for(unsigned int l=0; l<num_leaf; ++l, ++ptLN) 
+		{
+			out << l << " ";
+			// write probabilities
+			for (int p = 0; p<num_classes; p++)
+				out << ptLN->pfg[p] << " ";
+
+			// write centers and rectangle's sizes. For each patch there are 4 numbers!
+			for (int p = 0; p<num_classes; p++)
+			{
+				out <<  "| " << ptLN->vCenter[p].size() << " ";
+				
+				for(unsigned int k=0; k<ptLN->vCenter[p].size(); ++k) 
+				{
+					out << "[" << ptLN->vCenter[p][k].x << " " << ptLN->vCenter[p][k].y << " ";
+					out << ptLN->vSize[p][k].width << " " << ptLN->vSize[p][k].height << "] ";
 				}
 			}
-			out << endl;
+			out << endl; // end of leaf
 		}
 
 		out.close();
@@ -126,37 +151,54 @@ bool CRTree::saveTree(const char* filename) const {
 // Start grow tree
 void CRTree::growTree(const CRPatch& TrData, int samples) {
 	// Get ratio positive patches/negative patches
-	int pos = 0;
+	patch_size.height = TrData.vLPatches[0][0].vPatch[0].rows;
+	patch_size.width = TrData.vLPatches[0][0].vPatch[0].cols;
+	channels = TrData.vLPatches[0][0].vPatch.size();
+
+	vector<float> vRatio(num_classes+1);
+	vRatio[0] = 1;
 	vector<vector<const PatchFeature*> > TrainSet( TrData.vLPatches.size() );
-	for(unsigned int l=0; l<TrainSet.size(); ++l) {
+	float n0 = TrData.vLPatches[0].size();
+	for(unsigned int l=0; l<TrainSet.size(); l++) {
 		TrainSet[l].resize(TrData.vLPatches[l].size());
 		
-		if(l>0) pos += TrainSet[l].size();
+		vRatio[l] = TrainSet[l].size()/n0;
 		
-		for(unsigned int i=0; i<TrainSet[l].size(); ++i) {
+		for(unsigned int i=0; i < TrainSet[l].size(); i++) {
 			TrainSet[l][i] = &TrData.vLPatches[l][i];
 		}
 	}
 
 	// Grow tree
-	grow(TrainSet, 0, 0, samples, pos / float(TrainSet[0].size()) );
+	grow(TrainSet, 0, 0, samples, vRatio );
+
+	//after tree was constructed we can count average size for classes
 }
 
 // Called by growTree
-void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, float pnratio) {
-
-	if(depth<max_depth && TrainSet[1].size()>0) {	
-
+void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, vector<float> vRatio)
+{
+	int number_of_patches = 0;
+	int class_left = 0;
+	for (int i = 0; i <= num_classes ; i++)
+	{
+		if (TrainSet[i].size() > 0)
+		{
+			class_left++;
+			number_of_patches += TrainSet[i].size();
+		}
+	}
+	if(depth < max_depth && class_left > 1) // until max depth is not reached or patches of more than one classes left
+	{	
 		vector<vector<const PatchFeature*> > SetA;
 		vector<vector<const PatchFeature*> > SetB;
 		int test[6];
 
 		// Set measure mode for split: 0 - classification, 1 - regression
 		unsigned int measure_mode = 1;
-		if( float(TrainSet[0].size()) / float(TrainSet[0].size()+TrainSet[1].size()) >= 0.05 && depth < max_depth-2 )
+		if( float(TrainSet[num_classes].size()) / float(number_of_patches) > 0.05 
+						&& depth < max_depth-2 )
 			measure_mode = cvRandInt( cvRNG ) % 2;
-
-		cout << "MeasureMode " << depth << " " << measure_mode << " " << TrainSet[0].size() << " " << TrainSet[1].size() << endl;
 	
 		// Find optimal test
 		if( optimizeTest(SetA, SetB, TrainSet, test, samples, measure_mode) ) {
@@ -169,61 +211,70 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 
 			double countA = 0;
 			double countB = 0;
-			for(unsigned int l=0; l<TrainSet.size(); ++l) {
-				cout << "Final_Split A/B " << l << " " << SetA[l].size() << " " << SetB[l].size() << endl; 
+			for(unsigned int l = 0; l < TrainSet.size(); l++) {
 				countA += SetA[l].size(); countB += SetB[l].size();
 			}
-			for(unsigned int l=0; l<TrainSet.size(); ++l) {
-				cout << "Final_SplitA: " << SetA[l].size()/countA << "% "; 
-			}
-			cout << endl;
-			for(unsigned int l=0; l<TrainSet.size(); ++l) {
-				cout << "Final_SplitB: " << SetB[l].size()/countB << "% "; 
-			}
-			cout << endl;
 
 			// Go left
 			// If enough patches are left continue growing else stop
-			if(SetA[0].size()+SetA[1].size()>min_samples) {
-				grow(SetA, 2*node+1, depth+1, samples, pnratio);
+			if(countA > min_samples) {
+				grow(SetA, 2*node+1, depth+1, samples, vRatio);
 			} else {
-				makeLeaf(SetA, pnratio, 2*node+1);
+				makeLeaf(SetA, vRatio, 2*node+1);
 			}
 
 			// Go right
 			// If enough patches are left continue growing else stop
-			if(SetB[0].size()+SetB[1].size()>min_samples) {
-				grow(SetB, 2*node+2, depth+1, samples, pnratio);
+			if(countB > min_samples) {
+				grow(SetB, 2*node+2, depth+1, samples, vRatio);
 			} else {
-				makeLeaf(SetB, pnratio, 2*node+2);
+				makeLeaf(SetB, vRatio, 2*node+2);
 			}
 
 		} else {
 
 			// Could not find split (only invalid one leave split)
-			makeLeaf(TrainSet, pnratio, node);
+			makeLeaf(TrainSet, vRatio, node);
 	
 		}	
 
 	} else {
 
 		// Only negative patches are left or maximum depth is reached
-		makeLeaf(TrainSet, pnratio, node);
+		makeLeaf(TrainSet, vRatio, node);
 	
 	}
 }
 
 // Create leaf node from patches 
-void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, float pnratio, int node) {
+void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, vector<float> vRatio, int node) {
 	// Get pointer
 	treetable[node*7] = num_leaf;
 	LeafNode* ptL = &leaf[num_leaf];
 
 	// Store data
-	ptL->pfg = TrainSet[1].size() / float(pnratio*TrainSet[0].size()+TrainSet[1].size());
-	ptL->vCenter.resize( TrainSet[1].size() );
-	for(unsigned int i = 0; i<TrainSet[1].size(); ++i) {
-		ptL->vCenter[i] = TrainSet[1][i]->center;
+	vector<float> scaled_pb(num_classes, 0);
+	ptL->pfg.resize(num_classes, 0);
+	ptL->vCenter.resize(num_classes);
+	ptL->vSize.resize(num_classes);
+	float sum = 0;
+	for (int i = 0; i < num_classes; i++)
+	{
+		scaled_pb[i] = TrainSet[i].size()/vRatio[i];
+		sum += scaled_pb[i];
+	}
+	for (int i = 0; i < num_classes; i++)
+	{
+		if (sum != 0)
+			ptL->pfg[i] = scaled_pb[i] / sum;
+		ptL->vCenter[i].resize( TrainSet[i].size() );
+		ptL->vSize[i].resize( TrainSet[i].size() );
+		for(unsigned int k = 0; k<TrainSet[i].size(); k++)
+		{
+			ptL->vCenter[i][k] = TrainSet[i][k]->center;
+			ptL->vSize[i][k].width = TrainSet[i][k]->size.width;
+			ptL->vSize[i][k].height = TrainSet[i][k]->size.height;
+		}
 	}
 
 	// Increase leaf counter
@@ -249,16 +300,16 @@ bool CRTree::optimizeTest  (vector<vector<const PatchFeature*> >& SetA,
 	int tmpTest[6];
 
 	// Find best test of ITER iterations
-	for(unsigned int i =0; i<iter; ++i) {
+	for(unsigned int i = 0; i < iter; ++i) {
 
 		// reset temporary data for split
-		for(unsigned int l =0; l<TrainSet.size(); ++l) {
+		for(unsigned int l = 0; l < TrainSet.size(); l++) {
 			tmpA[l].clear();
 			tmpB[l].clear(); 
 		}
 
 		// generate binary test without threshold
-		generateTest(&tmpTest[0], TrainSet[1][0]->roi.width, TrainSet[1][0]->roi.height, TrainSet[1][0]->vPatch.size());
+		generateTest(&tmpTest[0], patch_size.width, patch_size.height, channels);
 
 		// compute value for each patch
 		evaluateTest(valSet, &tmpTest[0], TrainSet);
@@ -266,8 +317,10 @@ bool CRTree::optimizeTest  (vector<vector<const PatchFeature*> >& SetA,
 		// find min/max values for threshold
 		int vmin = INT_MAX;
 		int vmax = INT_MIN;
-		for(unsigned int l = 0; l<TrainSet.size(); ++l) {
-			if(valSet[l].size()>0) {
+		for(unsigned int l = 0; l < TrainSet.size(); l++)
+		{
+			if(valSet[l].size()>0)
+			{
 				if(vmin>valSet[l].front().val)  vmin = valSet[l].front().val;
 				if(vmax<valSet[l].back().val )  vmax = valSet[l].back().val;
 			}
@@ -286,14 +339,20 @@ bool CRTree::optimizeTest  (vector<vector<const PatchFeature*> >& SetA,
 				split(tmpA, tmpB, TrainSet, valSet, tr);
 
 				// Do not allow empty set split (all patches end up in set A or B)
-				if( tmpA[0].size()+tmpA[1].size()>0 && tmpB[0].size()+tmpB[1].size()>0 ) {
+				int ACount = 0, BCount;
+				for (int z = 0; z <= num_classes; z++)
+				{
+					ACount += tmpA[z].size();
+					BCount += tmpB[z].size();
+				}
+				if( ACount >0 && BCount > 0 ) {
 
 					// Measure quality of split with measure_mode 0 - classification, 1 - regression
 					tmpDist = measureSet(tmpA, tmpB, measure_mode);
 
 					// Take binary test with best split
-					if(tmpDist>bestDist) {
-
+					if(tmpDist>bestDist)
+					{
 						found = true;
 						bestDist = tmpDist;
 						for(int t=0; t<5;++t) test[t] = tmpTest[t];
@@ -301,13 +360,9 @@ bool CRTree::optimizeTest  (vector<vector<const PatchFeature*> >& SetA,
 						SetA = tmpA;
 						SetB = tmpB;
 					}
-
 				}
-
 			} // end for j
-
 		}
-
 	} // end iter
 
 	// return true if a valid test has been found
@@ -325,8 +380,8 @@ void CRTree::evaluateTest(std::vector<std::vector<IntIndex> >& valSet, const int
 			// get pixel values 
 			int step = ptC.step1();
 			int size = ptC.type();
-			int p1 = ptC.at<uchar>(test[1], test[0]);//(int)*(uchar*)cvPtr2D( ptC, test[1], test[0]);
-			int p2 = ptC.at<uchar>(test[3], test[2]);//(int)*(uchar*)cvPtr2D( ptC, test[3], test[2]);
+			int p1 = ptC.at<uchar>(test[1], test[0]);
+			int p2 = ptC.at<uchar>(test[3], test[2]);
 		
 			valSet[l][i].val = p1 - p2;
 			valSet[l][i].index = i;			
@@ -359,61 +414,61 @@ void CRTree::split(vector<vector<const PatchFeature*> >& SetA, vector<vector<con
 	}
 }
 
-double CRTree::distMean(const std::vector<const PatchFeature*>& SetA, const std::vector<const PatchFeature*>& SetB) {
-	vector<double> meanAx(num_cp,0);
-	vector<double> meanAy(num_cp,0);
-	for(vector<const PatchFeature*>::const_iterator it = SetA.begin(); it != SetA.end(); ++it) {
-		for(unsigned int c = 0; c<num_cp; ++c) {
-			meanAx[c] += (*it)->center[c].x;
-			meanAy[c] += (*it)->center[c].y;
+double CRTree::distMean(const std::vector<const PatchFeature*>& SetA, const std::vector<const PatchFeature*>& SetB)
+{
+	/////////////////// Set A /////////////////////////
+	double meanAx = 0;
+	double meanAy = 0;
+	double distA = 0; // суммы квадратов
+	if (SetA.size() > 0)
+	{
+		for(vector<const PatchFeature*>::const_iterator it = SetA.begin(); it != SetA.end(); ++it) 
+		{	
+			meanAx += (*it)->center.x;
+			meanAy += (*it)->center.y;
+		}
+			
+		meanAx /= SetA.size();
+		meanAy /= SetA.size();
+		
+
+		for(std::vector<const PatchFeature*>::const_iterator it = SetA.begin(); it != SetA.end(); ++it)
+		{	
+			double tmp = (*it)->center.x - meanAx;
+			distA += tmp*tmp;
+			tmp = (*it)->center.y - meanAy;
+			distA += tmp*tmp;
 		}
 	}
 
-	for(unsigned int c = 0; c<num_cp; ++c) {
-		meanAx[c] /= (double)SetA.size();
-		meanAy[c] /= (double)SetA.size();
-	}
-
-	vector<double> distA(num_cp,0);
-	for(std::vector<const PatchFeature*>::const_iterator it = SetA.begin(); it != SetA.end(); ++it) {
-		for(unsigned int c = 0; c<num_cp; ++c) {
-			double tmp = (*it)->center[c].x - meanAx[c];
-			distA[c] += tmp*tmp;
-			tmp = (*it)->center[c].y - meanAy[c];
-			distA[c] += tmp*tmp;
+	/////////////////// Set B /////////////////////////
+	double meanBx = 0;
+	double meanBy = 0;
+	double distB = 0; // суммы квадратов
+	if (SetB.size() > 0)
+	{
+		for(vector<const PatchFeature*>::const_iterator it = SetB.begin(); it != SetB.end(); ++it) {
+			meanBx += (*it)->center.x;
+			meanBy += (*it)->center.y;
 		}
-	}
 
-	vector<double> meanBx(num_cp,0);
-	vector<double> meanBy(num_cp,0);
-	for(vector<const PatchFeature*>::const_iterator it = SetB.begin(); it != SetB.end(); ++it) {
-		for(unsigned int c = 0; c<num_cp; ++c) {
-			meanBx[c] += (*it)->center[c].x;
-			meanBy[c] += (*it)->center[c].y;
-		}
-	}
+		meanBx /= SetB.size();
+		meanBy /= SetB.size();
 
-	for(unsigned int c = 0; c<num_cp; ++c) {
-		meanBx[c] /= (double)SetB.size();
-		meanBy[c] /= (double)SetB.size();
-	}
-
-	vector<double> distB(num_cp,0);
-	for(std::vector<const PatchFeature*>::const_iterator it = SetB.begin(); it != SetB.end(); ++it) {
-		for(unsigned int c = 0; c<num_cp; ++c) {
-			double tmp = (*it)->center[c].x - meanBx[c];
-			distB[c] += tmp*tmp;
-			tmp = (*it)->center[c].y - meanBy[c];
-			distB[c] += tmp*tmp;
+		for(std::vector<const PatchFeature*>::const_iterator it = SetB.begin(); it != SetB.end(); ++it)
+		{
+			double tmp = (*it)->center.x - meanBx;
+			distB += tmp*tmp;
+			tmp = (*it)->center.y - meanBy;
+			distB += tmp*tmp;
 		}
 	}
 
 	double minDist = DBL_MAX;
 
-	for(unsigned int c = 0; c<num_cp; ++c) {
-		distA[c] += distB[c];
-		if(distA[c] < minDist) minDist = distA[c];
-	}
+	distA += distB;
+	if (distA < minDist)
+		minDist = distA;
 
 	return minDist/double( SetA.size() + SetB.size() ); 
 }
@@ -430,7 +485,8 @@ double CRTree::InfGain(const vector<vector<const PatchFeature*> >& SetA, const v
 	double n_entropyA = 0;
 	for(vector<vector<const PatchFeature*> >::const_iterator it = SetA.begin(); it != SetA.end(); ++it) {
 		double p = double( it->size() ) / sizeA;
-		if(p>0) n_entropyA += p*log(p); 
+		if (p > 0) 
+			n_entropyA += p*log(p); 
 	}
 
 	// get size of set B
@@ -446,7 +502,7 @@ double CRTree::InfGain(const vector<vector<const PatchFeature*> >& SetA, const v
 		if(p>0) n_entropyB += p*log(p); 
 	}
 
-	return (sizeA*n_entropyA+sizeB*n_entropyB)/(sizeA+sizeB); 
+	return (sizeA * n_entropyA + sizeB * n_entropyB) / (sizeA + sizeB); 
 }
 
 /////////////////////// IO functions /////////////////////////////

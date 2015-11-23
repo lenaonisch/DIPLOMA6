@@ -37,13 +37,6 @@ void qt_test::on_actionLoad_config_file_triggered()
 
 		DisplayPositiveFiles();
 
-		string directory;
-		const size_t last_slash_idx = filename.rfind('/');
-		if (std::string::npos != last_slash_idx)
-		{
-			directory = filename.substr(0, last_slash_idx);
-		}
-		gall_forest_app.configpath = directory;
 		QMessageBox msg;
 		QString str("Config file has been loaded successfully!");
 		msg.setText(str);
@@ -83,28 +76,8 @@ void qt_test::DisplayPositiveFiles()
 
 void qt_test::on_actionTrain_triggered()
 {
-	QString fileName = QFileDialog::getOpenFileName(this,
-         tr("Open config"), QDir::currentPath(), "All files (*.*);;Images (*.png *.xpm *.jpg)");
-
-	QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly)) {
-        return;
-    }
-
-	int mode = 1;
-
-	string filename = fileName.toLocal8Bit().constData();
 	try
 	{
-		gall_forest_app.loadConfig(filename/*, mode*/);
-
-		string directory;
-		const size_t last_slash_idx = filename.rfind('/');
-		if (std::string::npos != last_slash_idx)
-		{
-			directory = filename.substr(0, last_slash_idx);
-		}
-		gall_forest_app.configpath = directory;
 		gall_forest_app.run_train();
 	}
 	catch (exception& e)

@@ -15,6 +15,13 @@ GALL_app::GALL_app()
 
 void GALL_app::loadConfig(string filename)
 {
+	string directory;
+	const size_t last_slash_idx = filename.rfind('/');
+	if (std::string::npos != last_slash_idx)
+	{
+		configpath = filename.substr(0, last_slash_idx);
+	}
+
 	char buffer[400];
 	ifstream in(filename);
 
@@ -102,16 +109,21 @@ void GALL_app::loadConfig(string filename)
 		// Samples from pos. examples
 		in.getline(buffer,400);
 		in >> samples_neg;
+		// Number of binary tests generated
+		in.getline(buffer,400);
+		in.getline(buffer,400);
+		in >> binary_tests_iterations;
 		// path to classmap file
+		in.getline(buffer,400);
 		in.getline(buffer,400);
 		in >> classmap_file;
 		
-		ifstream in_class(classmap_file);
+		ifstream in_class(configpath+classmap_file);
 		if(in_class.is_open()) {
 			in_class >> num_of_classes;
 			classes.resize(num_of_classes);
 			for (int i = 0; i < num_of_classes; i++)
-				in_class >> classes[i];
+				in_class >> buffer >> classes[i];
 		}
 		else {
 			string s ("Classmap file not found ");
@@ -140,9 +152,7 @@ void GALL_app::run_train()
 	CvRNG cvRNG(cvGetTickCount ());
 						
 	// Create directory
-	string tpath(configpath);
-	//string tpath(treepath);
-	tpath += treepath;
+	string tpath(configpath+treepath);
 	tpath.erase(tpath.find_last_of(PATH_SEP)); //delete fileprefix
 	//createDirectory(path);
 	QString q_path(tpath.c_str());
@@ -150,13 +160,13 @@ void GALL_app::run_train()
 	dir.mkpath(dir.absolutePath());
 
 	// Init training data
-	CRPatch Train(&cvRNG, p_width, p_height, num_of_classes+1); 
+	CRPatch Train(&cvRNG, p_width, p_height, num_of_classes); 
 			
 	// Extract training patches
 	extract_Patches(Train, &cvRNG); 
 
 	// Train forest
-	crForest.trainForest(20, 15, &cvRNG, Train, 2000);
+	crForest.trainForest(20, 15, &cvRNG, Train, binary_tests_iterations);
 
 	// Save forest
 	string spath(configpath);
@@ -236,7 +246,7 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 		vBBox.resize(size);
 		vClassNums.resize(size);
 
-		for(unsigned int i=0; i<size; ++i) {
+		for(unsigned int i = 0; i<size; i++) {
 			// Read filename
 			in >> vFilenames[i];
 
@@ -329,51 +339,47 @@ void GALL_app::show() {
 void GALL_app::detect(CRForestDetector& crDetect, QHash <QString, Results>& results) {
 
 	// Load image names
-	//vector<string> vFilenames;
-	//loadImFile(vFilenames);
 	loadImFile(results);
 				
 	char buffer[200];
 
-	// Storage for output
-	vector<vector<cv::Mat> > vImgDetect(scales.size());	
-	ofstream outputFile;// ((configpath + outpath + "scope.txt").c_str());
-	outputFile.open(configpath + outpath + "scope.txt");
-	bool bOpen = outputFile.is_open();
+	//ofstream outputFile;// ((configpath + outpath + "scope.txt").c_str());
+	//outputFile.open(configpath + outpath + "scope.txt");
+	//bool bOpen = outputFile.is_open();
 
 	// Run detector for each image
-	
-	//for(unsigned int i=0; i<vFilenames.size(); ++i)
+
 	for (QHash<QString, Results>::const_iterator i = results.constBegin(); i != results.constEnd(); ++i)
 	{
+		// Storage for output
+		vector<vector<cv::Mat> > vImgDetect(scales.size());	
 		// Load image
 		cv::Mat img;
 		string filename (configpath + impath + "/" + i.key().toStdString());	
 		img = cv::imread(filename.c_str(),CV_LOAD_IMAGE_COLOR);
 		if(!img.data) {
-			string s ("Could not load image file: ");
-			s += imfiles;
-			s += "/";
-			s += i.key().toStdString();
+			string s ("Could not load image file: " + imfiles + "/" + i.key().toStdString());
 			throw  string_exception(s);
 		}
-		if (bOpen){
-			outputFile << i.key().toStdString() << "\n";
-		}
+		//if (bOpen){
+		//	outputFile << i.key().toStdString() << "\n";
+		//}
 
-		// Prepare scales
-		for(unsigned int k=0;k<vImgDetect.size(); ++k) {
-			vImgDetect[k].resize(ratios.size());
-			for(unsigned int c=0;c<vImgDetect[k].size(); ++c) {
+		// Prepare scales and classes
+		
+		for(unsigned int k = 0; k < vImgDetect.size(); k++) {
+			vImgDetect[k].resize(num_of_classes);
+			for(unsigned int c = 0; c < vImgDetect[k].size(); c++) {
 				vImgDetect[k][c].create ( cvSize(int(img.cols*scales[k]+0.5),int(img.rows*scales[k]+0.5)), CV_32FC1 );
 			}
 		}
 
-		// Detection for all scales
-		crDetect.detectPyramid(img, vImgDetect, ratios);
-
 		// Store result
-		for(unsigned int k=0;k<vImgDetect.size(); ++k) {
+		for(unsigned int k = 0; k < vImgDetect.size(); k++) {
+
+			// Detection for all scales and classes
+			crDetect.detectPyramid(img, vImgDetect, ratios);
+
 			cv::Mat tmp ( vImgDetect[k][0].rows, vImgDetect[k][0].cols, CV_8UC1);
 			for(unsigned int c=0;c<vImgDetect[k].size(); ++c) {
 				
@@ -388,11 +394,11 @@ void GALL_app::detect(CRForestDetector& crDetect, QHash <QString, Results>& resu
 				{
 					sprintf_s(buffer,"%s/detect_max-%d_sc%d_c%d.png",(configpath + outpath).c_str(),i,k,c);
 					imwrite( buffer, detectedMax );
-					if (bOpen)
-					{
-						for (std::vector<cv::Point>::iterator it = maxs.begin() ; it != maxs.end(); ++it)
-							outputFile << "[" << it->x << "; " << it->y << "]\n";
-					}
+					//if (bOpen)
+					//{
+					//	for (std::vector<cv::Point>::iterator it = maxs.begin() ; it != maxs.end(); ++it)
+					//		outputFile << "[" << it->x << "; " << it->y << "]\n";
+					//}
 				}
 
 				detectedMax.release();
@@ -407,7 +413,7 @@ void GALL_app::detect(CRForestDetector& crDetect, QHash <QString, Results>& resu
 		img.release();
 
 	}
-	outputFile.close();
+	//outputFile.close();
 }
 
 // Extract patches from training data
@@ -466,9 +472,9 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 
 			// Extract negative training patches
 			if(vBBox.size()==vFilenames.size())
-				Train.extractPatches(img, samples_neg, 0, &vBBox[i]); 
+				Train.extractPatches(img, samples_neg, num_of_classes, &vBBox[i]); // enumeration from 0, so index num_of_classes - index of background!
 			else
-				Train.extractPatches(img, samples_neg, 0); 
+				Train.extractPatches(img, samples_neg, num_of_classes); 
 
 			// Release image
 			img.release();

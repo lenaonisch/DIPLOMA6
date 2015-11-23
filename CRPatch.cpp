@@ -9,10 +9,11 @@
 using namespace std;
 using namespace cv;
 
-void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, cv::Point * vCenter) {
+void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, cv::Point * center) {
 	// extract features
 	vector<cv::Mat> vImg; // uchar, CV_8UC1
 	extractFeatureChannels(img, vImg);
+	cv::Rect roi(0, 0, width, height); //area that will be cloned
 
 	Mat tmp;
 	int offx = width/2; 
@@ -34,24 +35,24 @@ void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, 
 		Vec2i point = locations.at<Vec2i>(i,0);
 		
 		PatchFeature pf;
-		vLPatches[label].push_back(pf);
 
-		vLPatches[label].back().roi.x = point[0];  vLPatches[label].back().roi.y = point[1];  
-		vLPatches[label].back().roi.width = width;  vLPatches[label].back().roi.height = height; 
+		roi.x = point[0];
+		roi.y = point[1];
 
-		if(vCenter!=0) {
-			//vLPatches[label].back().center.resize(vCenter->size());
-			//for(unsigned int c = 0; c<vCenter->size(); ++c) {
-				vLPatches[label].back().center.x = point[0] + offx - (*vCenter).x;
-				vLPatches[label].back().center.y = point[1] + offy - (*vCenter).y;
-			//}
+		if(center!=0) 
+		{
+			pf.center.x = point[0] + offx - (*center).x;
+			pf.center.y = point[1] + offy - (*center).y;
+			pf.size.height = box->height;
+			pf.size.width = box->width;
 		}
+
+		vLPatches[label].push_back(pf);
 
 		vLPatches[label].back().vPatch.resize(vImg.size());
 		for(unsigned int c=0; c<vImg.size(); ++c) {
-			vLPatches[label].back().vPatch[c] = vImg[c](vLPatches[label].back().roi).clone();
+			vLPatches[label].back().vPatch[c] = vImg[c](roi).clone();
 		}
-
 	}
 
 	locations.release();

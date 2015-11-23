@@ -11,8 +11,9 @@
 using namespace std;
 
 
-void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect, std::vector<float>& ratios) {
+void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect/*, std::vector<float>& ratios*/) {
 
+	int number_of_class = imgDetect.size();
 	// extract features
 	std::vector<cv::Mat> vImg;
 	CRPatch::extractFeatureChannels(img, vImg);
@@ -20,7 +21,6 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 	// reset output image
 	for(int c=0; c<(int)imgDetect.size(); ++c)
 		imgDetect[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC1); // CV_32FC1 !!
-		//cvSetZero( &imgDetect[c] );
 
 	// get pointers to feature channels
 	int stepImg;
@@ -38,7 +38,6 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 	for(unsigned int c=0; c<imgDetect.size(); ++c)
 	{
 		ptDet[c] = (float*)imgDetect[c].data;
-		//cvGetRawData( &imgDetect[c], (uchar**)&(ptDet[c]), &stepDet);
 	}
 	stepDet = imgDetect[0].step1();
 
@@ -65,34 +64,29 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 			for(vector<const LeafNode*>::const_iterator itL = result.begin(); itL!=result.end(); ++itL)
 			{
 
-				for (vector<float>::const_iterator pfgi = pfg.begin(); pfgi!=pfg.end(); ++pfgi)
+				for (int c = 0; c < number_of_class; c++)
 				{
+
 				// To speed up the voting, one can vote only for patches 
 			        // with a probability for foreground > 0.5
 			        // 
-				// if((*itL)->pfg>0.5) {
-
-					// voting weight for leaf 
-					float w = (*itL)->pfg / float( (*itL)->vCenter.size() * result.size() );
-
-					// vote for all points stored in the leaf
-					for(vector<vector<cv::Point> >::const_iterator it = (*itL)->vCenter.begin(); it!=(*itL)->vCenter.end(); ++it)
+				if ((*itL)->pfg[c] > 0.5)
 					{
+						// voting weight for leaf 
+						float w = (*itL)->pfg[c] / float( (*itL)->vCenter[c].size() * result.size() );
 
-						for(int c=0; c<(int)imgDetect.size(); ++c) 
+						// vote for all points stored in the leaf
+						for(vector<cv::Point>::const_iterator it = (*itL)->vCenter[c].begin(); it!=(*itL)->vCenter[c].end(); ++it)
 						{
-							  int x = int(cx - (*it)[0].x * ratios[c] + 0.5);
-							  int y = cy-(*it)[0].y;
-							  if(y>=0 && y<imgDetect[c].rows && x>=0 && x<imgDetect[c].cols)
-							  {
-									*(ptDet[c]+x+y*stepDet) += w;
-							  }
+							int x = int(cx - (*it).x + 0.5);
+							int y = cy-(*it).y;
+							if(y >= 0 && y < imgDetect[c].rows && x >= 0 && x<imgDetect[c].cols)
+							{
+								*(ptDet[c]+x+y*stepDet) += w;
+							}
 						}
-					}
-
-				 // } // end if
+					} // end if
 				}
-
 			}
 
 			// increase pointer - x
@@ -138,7 +132,7 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<vector<cv::Mat>>& vImgD
 			cv::Mat cLevel (vImgDetect[i][0].rows, vImgDetect[i][0].cols, CV_8UC3);				
 			cv::resize( img, cLevel, cv::Size(vImgDetect[i][0].cols,vImgDetect[i][0].rows));//CV_INTER_LINEAR is default
 			// detection
-			detectColor(cLevel,vImgDetect[i],ratios);
+			detectColor(cLevel,vImgDetect[i]/*,ratios*/);
 
 			cLevel.release();
 		}

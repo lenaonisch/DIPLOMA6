@@ -27,6 +27,7 @@ public:
 	string trainnegfiles; // File with postive examples
 	int subsamples_neg;// Subset of neg images -1: all images
 	unsigned int samples_neg; // Samples from pos. examples
+	unsigned int binary_tests_iterations;
 	string classmap_file;
 	int num_of_classes; //number of classes
 	vector<string> classes; //class names

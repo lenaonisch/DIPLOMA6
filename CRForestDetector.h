@@ -17,10 +17,10 @@ public:
 	void detectPyramid(cv::Mat img, std::vector<std::vector<cv::Mat> >& imgDetect, std::vector<float>& ratios);
 
 	// Get/Set functions
-	unsigned int GetNumCenter() const {return crForest->GetNumCenter();}
+	//unsigned int GetNumCenter() const {return crForest->GetNumCenter();}
 
 private:
-	void detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect, std::vector<float>& ratios);
+	void detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect/*, std::vector<float>& ratios*/);
 	const CRForest* crForest;
 	int width;
 	int height;

@@ -14,15 +14,10 @@ struct PatchFeature {
 public:
 	PatchFeature() {}
 
-	cv::Rect roi;
+	cv::Size size;
 	cv::Point center;
-	unsigned int class_num;
 
 	std::vector<cv::Mat> vPatch;
-	//void print() const {
-	//	std::cout << roi.x << " " << roi.y << " " << roi.width << " " << roi.height;
-	//	for(unsigned int i=0; i<center.size(); ++i) std::cout << " " << center[i].x << " " << center[i].y; std::cout << std::endl;
-	//}
 	void show(int delay) const;
 };
 
@@ -30,9 +25,11 @@ static HoG hog;
 
 class CRPatch {
 public:
-	CRPatch(CvRNG* pRNG, int w, int h, int num_l) : cvRNG(pRNG), width(w), height(h) { vLPatches.resize(num_l);}
+	// num_l - number of classes
+	CRPatch(CvRNG* pRNG, int w, int h, int num_l) : cvRNG(pRNG), width(w), height(h) { vLPatches.resize(num_l+1);}
 
 	// Extract patches from image
+	// label - label of class
 	void extractPatches(cv::Mat img, unsigned int n, int label, cv::Rect* box = 0, cv::Point* vCenter = 0);
 
 	// Extract features from image
