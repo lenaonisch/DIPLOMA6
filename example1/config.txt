@@ -1,0 +1,43 @@
+# Path to trees + prefix 'treetable'
+/trees/treetable
+# Number of trees
+5
+# Patch width
+16
+# Patch height
+16
+# Path to images
+/testimages
+# File with names of images
+/test.txt
+# Extract features
+1
+# Scales (Number of scales - Scales)
+1 1
+# Ratios (Number of ratios - ratio)
+1 1
+# Output path
+/detect
+# Scale factor for output image (default: 128)
+50
+# Path to positive examples
+/trainimages
+# File with postive examples
+/train_pos.txt
+# Subset of positive images -1: all images
+-1
+# Sample patches from pos. examples
+10
+# Path to negative examples
+/trainimages
+# File with negative examples
+/train_neg.txt
+# Subset of negative images -1: all images
+-1
+# Sample patches from neg. examples
+10
+# Number of random binary tests generated
+1000
+# path to classmap file
+/classmap.txt
+
