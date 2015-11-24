@@ -12,6 +12,7 @@
 #include <tchar.h>
 #include <vector>
 #include <iostream>
+#include <time.h>
 
 #include <fstream>
 #include <string>

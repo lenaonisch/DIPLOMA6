@@ -381,10 +381,11 @@ void GALL_app::detect(CRForestDetector& crDetect, QHash <QString, Results>& resu
 			crDetect.detectPyramid(img, vImgDetect, ratios);
 
 			cv::Mat tmp ( vImgDetect[k][0].rows, vImgDetect[k][0].cols, CV_8UC1);
-			for(unsigned int c=0;c<vImgDetect[k].size(); ++c) {
+			for(unsigned int c = 0; c < vImgDetect[k].size(); ++c) {
 				
 				vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
-				sprintf_s(buffer,"%s/detect-%d_sc%d_c%d.png",(configpath + outpath).c_str(),i,k,c);
+				// int k - scale, c - index of class
+				sprintf_s(buffer,"%s/%s_scale%d_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, i.key().toStdString().c_str());
 				imwrite( buffer, tmp );
 				
 				
@@ -392,7 +393,7 @@ void GALL_app::detect(CRForestDetector& crDetect, QHash <QString, Results>& resu
 				std::vector<cv::Point> maxs;
 				if (localMaxima(tmp, detectedMax, 11, maxs))
 				{
-					sprintf_s(buffer,"%s/detect_max-%d_sc%d_c%d.png",(configpath + outpath).c_str(),i,k,c);
+					sprintf_s(buffer,"%s/%s_scale%d_max_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, i.key().toStdString().c_str());
 					imwrite( buffer, detectedMax );
 					//if (bOpen)
 					//{

@@ -13,73 +13,63 @@ using namespace std;
 
 // Read tree from file
 CRTree::CRTree(const char* filename) {
-	cout << "Load Tree " << filename << endl;
-
 	int dummy;
 
-	ifstream in(filename);
-	if(in.is_open()) 
+	FILE * pFile = fopen (filename,"r");
+	if (pFile != NULL)
 	{
-		// allocate memory for tree table
-		in >> max_depth;
+		fscanf (pFile, "%i %i %i", &max_depth, &num_leaf, &num_classes);
+	
 		num_nodes = (int)pow(2.0,int(max_depth+1))-1;
 		// num_nodes x 7 matrix as vector
 		treetable = new int[num_nodes * 7];
 		int* ptT = &treetable[0];
-		
-		// allocate memory for leafs
-		in >> num_leaf;
+	
 		leaf = new LeafNode[num_leaf];
-
-		// number of classes!!! 
-		in >> num_classes;
 
 		// read tree nodes
 		for(unsigned int n=0; n<num_nodes; ++n) 
 		{
-			in >> dummy; in >> dummy;
+			fscanf (pFile, "%i %i", &dummy, &dummy);
 			for(unsigned int i=0; i<7; ++i, ++ptT) {
-				in >> *ptT;
+				fscanf (pFile, "%i", ptT);
 			}
 		}
 
 		// read tree leafs
 		LeafNode* ptLN = &leaf[0];
-		char symbol;
-		for(unsigned int l=0; l<num_leaf; ++l, ++ptLN) 
+		char symbol = '0';
+		char bracket = '0'; // fake initialization
+		for(unsigned int l=0; l<num_leaf; l++, ++ptLN) 
 		{
-			in >> dummy; // sequence number
+			fscanf (pFile, "%i", &dummy); // sequence number 
 			ptLN->pfg.resize(num_classes);
 			ptLN->vCenter.resize(num_classes);
 			ptLN->vSize.resize(num_classes);
 			for (int p = 0; p < num_classes; p++) //  probabilities
-				in >> ptLN->pfg[p];
+				fscanf (pFile, "%f",  &ptLN->pfg[p]);
 				
 			// read centers and rectangle's sizes. For each patch there are 4 numbers!
 			for (int p = 0; p < num_classes; p++)
 			{
-				in >> symbol; // "|" symbol
-				in >> dummy;
+				fscanf (pFile, " %c %i",  &symbol, &dummy); // "|" symbol, number of patches
 				ptLN->vCenter[p].resize(dummy);
 				ptLN->vSize[p].resize(dummy);
 				for(int i=0; i<dummy; ++i)
 				{
-					in >> symbol;
-					in >> ptLN->vCenter[p][i].x;
-					in >> ptLN->vCenter[p][i].y;
-					in >> ptLN->vSize[p][i].width;
-					in >> ptLN->vSize[p][i].height;
-					in >> symbol; 
+					fscanf (pFile, " %c%i %i %i %i%c", 
+								&bracket, &ptLN->vCenter[p][i].x, &ptLN->vCenter[p][i].y,
+										&ptLN->vSize[p][i].width, &ptLN->vSize[p][i].height,
+								&bracket);
 				}
 			}
 		}
-
-	} else {
-		cerr << "Could not read tree: " << filename << endl;
+		if (fclose (pFile) != 0)
+		{
+			string f(filename);
+			throw string_exception("Failed to close " + f);
+		}
 	}
-
-	in.close();
-
 }
 
 
