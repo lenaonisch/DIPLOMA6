@@ -5,14 +5,13 @@
 #pragma once
 #include "stdafx.h"
 #include "CRForestDetector.h"
-//#include <vector>
-#include <time.h>
 
 using namespace std;
 
+// imgDetect - vector.size == num_of_classes
+void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<vector<list<float>>>& ratios) {
 
-void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect, std::vector<float>& ratios) {
-
+	int img_width = img.rows;
 	// extract features
 	std::vector<cv::Mat> vImg;
 	CRPatch::extractFeatureChannels(img, vImg);
@@ -20,7 +19,6 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 	// reset output image
 	for(int c=0; c<(int)imgDetect.size(); ++c)
 		imgDetect[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC1); // CV_32FC1 !!
-		//cvSetZero( &imgDetect[c] );
 
 	// get pointers to feature channels
 	int stepImg;
@@ -28,7 +26,6 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 	uchar** ptFCh_row = new uchar*[vImg.size()];
 	for(unsigned int c=0; c<vImg.size(); ++c) {
 		ptFCh[c] = vImg[c].data;
-		//cvGetRawData( &vImg[c], (uchar**)&(ptFCh[c]), &stepImg);
 	}
 	stepImg = vImg[0].step1();
 
@@ -38,7 +35,6 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 	for(unsigned int c=0; c<imgDetect.size(); ++c)
 	{
 		ptDet[c] = (float*)imgDetect[c].data;
-		//cvGetRawData( &imgDetect[c], (uchar**)&(ptDet[c]), &stepDet);
 	}
 	stepDet = imgDetect[0].step1();
 
@@ -65,31 +61,31 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 			for(vector<const LeafNode*>::const_iterator itL = result.begin(); itL!=result.end(); ++itL)
 			{
 
+				for (int c = 0; c < class_count; c++)
+				{
+
 				// To speed up the voting, one can vote only for patches 
 			        // with a probability for foreground > 0.5
 			        // 
-				// if((*itL)->pfg>0.5) {
+				/*if ((*itL)->pfg[c] > prob_threshold)
+					{*/
+						// voting weight for leaf 
+						float w = (*itL)->pfg[c] / float( (*itL)->vCenter[c].size() * result.size() );
 
-					// voting weight for leaf 
-					float w = (*itL)->pfg / float( (*itL)->vCenter.size() * result.size() );
-
-					// vote for all points stored in the leaf
-					for(vector<vector<cv::Point> >::const_iterator it = (*itL)->vCenter.begin(); it!=(*itL)->vCenter.end(); ++it)
-					{
-
-						for(int c=0; c<(int)imgDetect.size(); ++c) 
+						// vote for all points stored in the leaf
+						int k = 0;
+						for(vector<cv::Point>::const_iterator it = (*itL)->vCenter[c].begin(); it!=(*itL)->vCenter[c].end(); ++it, k++)
 						{
-							  int x = int(cx - (*it)[0].x * ratios[c] + 0.5);
-							  int y = cy-(*it)[0].y;
-							  if(y>=0 && y<imgDetect[c].rows && x>=0 && x<imgDetect[c].cols)
-							  {
-									*(ptDet[c]+x+y*stepDet) += w;
-							  }
+							int x = int(cx - (*it).x + 0.5);
+							int y = cy-(*it).y;
+							if(y >= 0 && y < imgDetect[c].rows && x >= 0 && x<imgDetect[c].cols)
+							{
+								*(ptDet[c]+x+y*stepDet) += w;
+								ratios[c][img_width*y+x].push_back((*itL)->vRatio[c][k]);
+							}
 						}
-					}
-
-				 // } // end if
-
+					//} // end if
+				}
 			}
 
 			// increase pointer - x
@@ -107,7 +103,6 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 	// smooth result image
 	for(int c=0; c<(int)imgDetect.size(); ++c)
 		cv::GaussianBlur(imgDetect[c], imgDetect[c], cv::Size(3,3), 0);
-		//cvSmooth( imgDetect[c], imgDetect[c], CV_GAUSSIAN, 3);
 
 	// release feature channels
 	for(unsigned int c=0; c<vImg.size(); ++c)
@@ -119,24 +114,72 @@ void CRForestDetector::detectColor(cv::Mat img, std::vector<cv::Mat>& imgDetect,
 
 }
 
-void CRForestDetector::detectPyramid(cv::Mat img, vector<vector<cv::Mat>>& vImgDetect, std::vector<float>& ratios) {	
+// img - input image
+// scales - scales to detect objects with different sizes
+// vImgDetect [0..scales], inside vector is for different classes
+void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat>>& vImgDetect, Results& result) {	
 
 	if(img.channels() == 1) 
 	{
 		throw string_exception("Gray color images are not supported.");
 	} 
 	else 
-	{ // color
-
-		cout << "Timer" << endl;
+	{
 		int tstart = clock();
 
-		for(int i=0; i<int(vImgDetect.size()); ++i) {
-			cv::Mat cLevel (vImgDetect[i][0].rows, vImgDetect[i][0].cols, CV_8UC3);				
-			cv::resize( img, cLevel, cv::Size(vImgDetect[i][0].cols,vImgDetect[i][0].rows));//CV_INTER_LINEAR is default
-			// detection
-			detectColor(cLevel,vImgDetect[i],ratios);
+		vImgDetect.resize(scales.size());
 
+
+		// run detector for all scales
+		for(int i=0; i < scales.size(); i++) 
+		{
+			// mats for classes and [i] scale
+			vector<cv::Mat> tmps(class_count);
+			vImgDetect[i].resize(class_count);
+			for(unsigned int c = 0; c < class_count; c++)
+			{
+				tmps[c].create ( cvSize(int(img.cols*scales[i]+0.5),int(img.rows*scales[i]+0.5)), CV_32FC1 );
+			}
+
+			cv::Mat cLevel (tmps[0].rows, tmps[0].cols, CV_8UC3);				
+			cv::resize( img, cLevel, cv::Size(tmps[0].cols, tmps[0].rows));//CV_INTER_LINEAR is default
+			
+			vector<vector<list<float>>> ratios(class_count);
+			for (int c = 0; c < class_count; c++)
+				ratios[c].resize(tmps[0].cols*tmps[0].rows); // vector of lists
+
+			// detection
+			detectColor(cLevel, tmps, ratios);
+
+			// find local maxima for classes
+			cv::Mat detectedMax;
+			vector<MaxPoint> maxs;
+			for (int c = 0; c < class_count; c++) {
+				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
+				localMaxima(vImgDetect[i][c], detectedMax, cv::Size(width_aver[c], height_min[c]), maxs, c);	
+				tmps[c].release();
+			}
+
+			// convert to Results
+			for (vector<MaxPoint>::iterator it = maxs.begin(); it != maxs.end(); it++)
+			{
+				int cl = it->class_label;
+				result.classes.push_back(cl);
+				int w = width_aver[cl];
+				float ratio = 0;
+				int rat_count = 0;
+				for(list<float>::iterator _rat = ratios[cl][w * (it->point.y) + it->point.x].begin(); _rat!= ratios[cl][w*it->point.y+it->point.x].end(); _rat++){
+					rat_count++;
+					ratio += *_rat;
+				}
+				ratio /= rat_count;
+
+				int h = w/ratio;
+
+				result.rects.push_back(cv::Rect(it->point.x - w/2, it->point.y - h/2, w, h));
+			}
+				
+			detectedMax.release();
 			cLevel.release();
 		}
 
@@ -146,10 +189,90 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<vector<cv::Mat>>& vImgD
 
 }
 
+int CRForestDetector::maxUsedValInHistogramData(cv::Mat src)
+{
+	HierarhicalThreshold ht(src);
+	int bins = 10;
+	if (ht.ProcessImage(1, bins))
+		return 255/bins*ht.thresholds_for_max_sigma[0];
+	return 0;
+}
 
+bool CRForestDetector::localMaxima(cv::Mat src,cv::Mat &dst, cv::Size size, std::vector<MaxPoint>& locations, int class_label)
+{
+	cv::Mat m0;
+	dst = src.clone();
+	cv::Point maxLoc(0,0);
 
+	//1.Be sure to have at least 3x3 for at least looking at 1 pixel close neighbours
+	//  Also the window must be <odd>x<odd>
+	//SANITYCHECK(squareSize,3,1);
+	cv::Point sqrCenter ((size.width-1)/2.0, (size.height-1)/2.0);
+	if (size.height % 2 == 0)
+		size.height--;
+	if (size.width % 2 == 0)
+		size.width--;
 
+	int half_height = size.height/2;
+	int half_width = size.width/2;
+	//2.Create the localWindow mask to get things done faster
+	//  When we find a local maxima we will multiply the subwindow with this MASK
+	//  So that we will not search for those 0 values again and again
+	cv::Mat localWindowMask = cv::Mat::zeros(size,CV_8U);//boolean
+	localWindowMask.at<unsigned char>(sqrCenter)=1;
 
+	//3.Find the threshold value to threshold the image
+		//this function here returns the peak of histogram of picture
+		//the picture is a thresholded picture it will have a lot of zero values in it
+		//so that the second boolean variable says :
+		//  (boolean) ? "return peak even if it is at 0" : "return peak discarding 0"
+	int thrshld =  maxUsedValInHistogramData(dst);
+	if (thrshld == 0) //black image, no max
+		return false;
+	cv::threshold(dst, dst, thrshld, 1, CV_THRESH_TOZERO); // 5th parameter 3 === THRESH_BINARY
 
-
-
+	//put the src in the middle of the big array
+	for (int row=sqrCenter.y;row<dst.size().height-sqrCenter.y;row++)
+	{
+		for (int col=sqrCenter.x;col<dst.size().width-sqrCenter.x;col++)
+			{
+			//1.if the value is zero it can not be a local maxima
+			if (dst.at<unsigned char>(row,col)==0)
+				continue;
+			//2.the value at (row,col) is not 0 so it can be a local maxima point
+			m0 =  dst.colRange(col-sqrCenter.x,col+sqrCenter.x+1).rowRange(row-sqrCenter.y,row+sqrCenter.y+1);
+			minMaxLoc(m0,NULL,NULL,NULL,&maxLoc);
+			//if the maximum location of this subWindow is at center
+			//it means we found the local maxima
+			//so we should delete the surrounding values which lies in the subWindow area
+			//hence we will not try to find if a point is at localMaxima when already found a neighbour was
+			if ((maxLoc.x==sqrCenter.x)&&(maxLoc.y==sqrCenter.y))
+			{
+				bool skip = false;
+				// check probability of other classes in area around found point
+				for (vector<MaxPoint>::iterator mp = locations.begin(); mp != locations.end(); mp++)
+				{
+					if (col > mp->point.x - half_width && col < mp->point.x + half_width
+						&& row > mp->point.y - half_height && row < mp->point.y + half_height) // if inside rect
+					{
+						if (mp->pf < dst.at<uchar>(row, col)) // if probability of previously detected max is less, replace
+						{
+							mp->class_label = class_label;
+							mp->pf = dst.at<uchar>(row, col);
+							mp->point.x = col;
+							mp->point.y = row;
+						}
+						skip = true;
+						break;
+					}
+				}
+				if (!skip)
+					locations.push_back(MaxPoint(col, row, dst.at<uchar>(row, col), class_label));
+				m0 = m0.mul(localWindowMask);
+								//we can skip the values that we already made 0 by the above function
+				col+=sqrCenter.x;
+			}
+		}
+	}
+	return true;
+}

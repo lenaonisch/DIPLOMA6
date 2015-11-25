@@ -17,6 +17,9 @@ public:
 	GALL_app gall_forest_app;
 	cv::Mat currentImage;
 
+	vector<Results> results;
+	vector<std::string> filenames;
+
 	qt_test(QWidget *parent = 0);
 	~qt_test();
 	bool loadFile(const QString &fileName);

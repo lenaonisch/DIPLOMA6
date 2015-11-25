@@ -9,23 +9,20 @@
 using namespace std;
 using namespace cv;
 
-void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, std::vector<cv::Point>* vCenter) {
+void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Point * center) {
 	// extract features
 	vector<cv::Mat> vImg; // uchar, CV_8UC1
 	extractFeatureChannels(img, vImg);
+	cv::Rect roi(0, 0, width, height); //area that will be cloned
 
 	Mat tmp;
 	int offx = width/2; 
 	int offy = height/2;
+	float ratio = (float)img.rows/img.cols;
 
 	// generate x,y locations
 	Mat locations ( n, 1, CV_32SC2 );
-	if(box==0)
-		cv::randu(locations, Scalar(0,0,0,0), Scalar(img.cols-width,img.rows-height,0,0));
-		//cvRandArr( cvRNG, locations.data, CV_RAND_UNI, cvScalar(0,0,0,0), Scalar(img.cols-width,img.rows-height,0,0) );
-	else
-		cv::randu(locations, Scalar(box->x,box->y,0,0), Scalar(box->x+box->width-width,box->y+box->height-height,0,0));
-		//cvRandArr( cvRNG, locations.data, CV_RAND_UNI, cvScalar(box->x,box->y,0,0), Scalar(box->x+box->width-width,box->y+box->height-height,0,0) );
+	cv::randu(locations, Scalar(0,0,0,0), Scalar(img.cols-width,img.rows-height,0,0));
 
 	// reserve memory
 	unsigned int offset = vLPatches[label].size();
@@ -34,24 +31,23 @@ void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, 
 		Vec2i point = locations.at<Vec2i>(i,0);
 		
 		PatchFeature pf;
-		vLPatches[label].push_back(pf);
 
-		vLPatches[label].back().roi.x = point[0];  vLPatches[label].back().roi.y = point[1];  
-		vLPatches[label].back().roi.width = width;  vLPatches[label].back().roi.height = height; 
+		roi.x = point[0];
+		roi.y = point[1];
 
-		if(vCenter!=0) {
-			vLPatches[label].back().center.resize(vCenter->size());
-			for(unsigned int c = 0; c<vCenter->size(); ++c) {
-				vLPatches[label].back().center[c].x = point[0] + offx - (*vCenter)[c].x;
-				vLPatches[label].back().center[c].y = point[1] + offy - (*vCenter)[c].y;
-			}
+		if(center!=0) 
+		{
+			pf.center.x = point[0] + offx - (*center).x;
+			pf.center.y = point[1] + offy - (*center).y;
+			pf.ratio = ratio;
 		}
+
+		vLPatches[label].push_back(pf);
 
 		vLPatches[label].back().vPatch.resize(vImg.size());
 		for(unsigned int c=0; c<vImg.size(); ++c) {
-			vLPatches[label].back().vPatch[c] = vImg[c](vLPatches[label].back().roi).clone();
+			vLPatches[label].back().vPatch[c] = vImg[c](roi).clone();
 		}
-
 	}
 
 	locations.release();

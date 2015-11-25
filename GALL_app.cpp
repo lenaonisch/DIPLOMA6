@@ -2,7 +2,6 @@
 #include "stdafx.h"
 #include "GALL_app.h"
 #include "CRForestDetector.h"
-#include "HierarhicalThreshold.h"
 #include <QTime>
 
 #define PATH_SEP "/"
@@ -13,8 +12,15 @@ GALL_app::GALL_app()
 
 }
 
-void GALL_app::loadConfig(string filename/*, int mode*/)
+void GALL_app::loadConfig(string filename)
 {
+	string directory;
+	const size_t last_slash_idx = filename.rfind('/');
+	if (std::string::npos != last_slash_idx)
+	{
+		configpath = filename.substr(0, last_slash_idx);
+	}
+
 	char buffer[400];
 	ifstream in(filename);
 
@@ -102,51 +108,51 @@ void GALL_app::loadConfig(string filename/*, int mode*/)
 		// Samples from pos. examples
 		in.getline(buffer,400);
 		in >> samples_neg;
-		//in.getline(buffer,400);
+		// Number of binary tests generated
+		in.getline(buffer,400);
+		in.getline(buffer,400);
+		in >> binary_tests_iterations;
+		// path to classmap file
+		in.getline(buffer,400);
+		in.getline(buffer,400);
+		in >> classmap_file;
+		// rescalsed path
+		in.getline(buffer, 400);
+		in.getline(buffer,400);
+		in >> train_rescaled_cropped_path;
+		// average width 
+		in.getline(buffer, 400);
+		in.getline(buffer, 400);
+		int tmp_w;
+		in >> tmp_w;
+		if (tmp_w != 0)
+		{
+			width_aver.resize(num_of_classes);
+			width_aver[0] = tmp_w;
+			for (int i = 1; i<num_of_classes; i++)
+				in >>width_aver[i];
+		}
+		
+		ifstream in_class(configpath+classmap_file);
+		if(in_class.is_open()) {
+			in_class >> num_of_classes;
+			classes.resize(num_of_classes);
+			for (int i = 0; i < num_of_classes; i++)
+				in_class >> buffer >> classes[i];
+		}
+		else {
+			string s ("Classmap file not found ");
+			s += classmap_file;
+			throw  string_exception(s);
+		}
+		in_class.close();
 
 	} else {
-		string s ("File not found ");
+		string s ("Config file not found ");
 		s += filename;
 		throw  string_exception(s);
 	}
 	in.close();
-
-	/*switch ( mode ) { 
-		case 0:
-		cout << endl << "------------------------------------" << endl << endl;
-		cout << "Training:         " << endl;
-		cout << "Patches:          " << p_width << " " << p_height << endl;
-		cout << "Train pos:        " << trainpospath << endl;
-		cout << "                  " << trainposfiles << endl;
-		cout << "                  " << subsamples_pos << " " << samples_pos << endl;
-		cout << "Train neg:        " << trainnegpath << endl;
-		cout << "                  " << trainnegfiles << endl;
-		cout << "                  " << subsamples_neg << " " << samples_neg << endl;
-		cout << "Trees:            " << ntrees << " " << off_tree << " " << treepath << endl;
-		cout << endl << "------------------------------------" << endl << endl;
-		break;
-
-		case 1:
-		cout << endl << "------------------------------------" << endl << endl;
-		cout << "Show:             " << endl;
-		cout << "Trees:            " << ntrees << " " << treepath << endl;
-		cout << endl << "------------------------------------" << endl << endl;
-		break;
-
-		default:
-		cout << endl << "------------------------------------" << endl << endl;
-		cout << "Detection:        " << endl;
-		cout << "Trees:            " << ntrees << " " << treepath << endl;
-		cout << "Patches:          " << p_width << " " << p_height << endl;
-		cout << "Images:           " << impath << endl;
-		cout << "                  " << imfiles << endl;
-		cout << "Scales:           "; for(unsigned int i=0;i<scales.size();++i) cout << scales[i] << " "; cout << endl;
-		cout << "Ratios:           "; for(unsigned int i=0;i<ratios.size();++i) cout << ratios[i] << " "; cout << endl;
-		cout << "Extract Features: " << xtrFeature << endl;
-		cout << "Output:           " << out_scale << " " << outpath << endl;
-		cout << endl << "------------------------------------" << endl << endl;
-		break;*/
-	//}
 }
 
 void GALL_app::run_train()
@@ -161,23 +167,26 @@ void GALL_app::run_train()
 	CvRNG cvRNG(cvGetTickCount ());
 						
 	// Create directory
-	string tpath(configpath);
-	//string tpath(treepath);
-	tpath += treepath;
+	string tpath(configpath+treepath);
 	tpath.erase(tpath.find_last_of(PATH_SEP)); //delete fileprefix
-	//createDirectory(path);
 	QString q_path(tpath.c_str());
 	QDir dir(q_path);
 	dir.mkpath(dir.absolutePath());
 
+	QString r_path((configpath+train_rescaled_cropped_path).c_str());
+	QDir dir_r(r_path);
+	dir_r.mkpath(dir_r.absolutePath());
+
 	// Init training data
-	CRPatch Train(&cvRNG, p_width, p_height, 2); 
+	CRPatch Train(&cvRNG, p_width, p_height, num_of_classes); 
 			
 	// Extract training patches
-	extract_Patches(Train, &cvRNG); 
+	extract_Patches(Train, &cvRNG);
+	CRForestDetector crDetect(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), &width_aver, &height_min, out_scale);
+	crDetect.save((configpath + treepath + "forest_detector.txt").c_str());
 
 	// Train forest
-	crForest.trainForest(20, 15, &cvRNG, Train, 2000);
+	crForest.trainForest(20, 15, &cvRNG, Train, binary_tests_iterations);
 
 	// Save forest
 	string spath(configpath);
@@ -186,7 +195,7 @@ void GALL_app::run_train()
 }
 
 // Init and start detector
-void GALL_app::run_detect() {
+void GALL_app::run_detect(vector<string>& filenames, vector<Results>& results) {
 	// Init forest with number of trees
 	CRForest crForest( ntrees ); 
 
@@ -196,7 +205,8 @@ void GALL_app::run_detect() {
 	crForest.loadForest(fpath.c_str());	
 
 	// Init detector
-	CRForestDetector crDetect(&crForest, p_width, p_height);
+	CRForestDetector crDetect(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), &width_aver, &height_min, out_scale);
+	crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
 
 	// create directory for output
 	string path(configpath);
@@ -206,11 +216,11 @@ void GALL_app::run_detect() {
 	dir.mkpath(dir.absolutePath());
 
 	// run detector
-	detect(crDetect);
+	detect(crDetect, filenames, results);
 }
 
 // load test image filenames
-void GALL_app::loadImFile(std::vector<string>& vFilenames) {
+void GALL_app::loadImFile(vector<std::string>& filenames) {
 	
 	char buffer[400];
 
@@ -222,11 +232,12 @@ void GALL_app::loadImFile(std::vector<string>& vFilenames) {
 		unsigned int size;
 		in >> size; //size = 10;
 		in.getline(buffer,400); 
-		vFilenames.resize(size);
+		filenames.resize(size);
 
 		for(unsigned int i=0; i<size; ++i) {
-			in.getline(buffer,400);      
-			vFilenames[i] = buffer;	
+			in.getline(buffer,400); 
+			filenames[i] = buffer;
+			//vFilenames[i] = buffer;	
 		}
 
 	} else {
@@ -238,46 +249,72 @@ void GALL_app::loadImFile(std::vector<string>& vFilenames) {
 }
 
 // load positive training image filenames
-void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox, std::vector<std::vector<cv::Point> >& vCenter) {
+void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames, 
+								std::vector<cv::Rect>& vBBox, 
+								/*std::vector<cv::Point>& vCenter,*/
+								std::vector<unsigned int> & vClassNums,
+								std::vector<int>& width_aver = vector<int>()) {
 
-	unsigned int size, numop; 
+	unsigned int size; 
 	string sfiles (configpath);
 	sfiles+=trainposfiles;
-	ifstream in(sfiles.c_str());
+	FILE * pFile = fopen (sfiles.c_str(),"r");
+	
+	if (pFile != NULL)
+	{
+		fscanf (pFile, "%i", &size);
 
-	if(in.is_open()) {
-		in >> size;
-		in >> numop;
-		cout << "Load Train Pos Examples: " << size << " - " << numop << endl;
-
+		bool w_aver = (width_aver.size() == 0);
 		vFilenames.resize(size);
-		vCenter.resize(size);
+		//vCenter.resize(size);
 		vBBox.resize(size);
+		vClassNums.resize(size);
+		if (w_aver)
+		{
+			width_aver.resize(num_of_classes, 0);
+		}
+		height_min.resize(num_of_classes, INT_MAX);
+		ratios.resize(size);
+		vector<int> class_instances(num_of_classes, 0); // number of instances of each class
 
-		for(unsigned int i=0; i<size; ++i) {
+		for(unsigned int i = 0; i<size; i++) {
+			char name [300];
 			// Read filename
-			in >> vFilenames[i];
+			fscanf (pFile, " %s %i %i %i %i %i",
+					&name, 
+					&vBBox[i].x, &vBBox[i].y, 
+					&vBBox[i].width, &vBBox[i].height,
+					/*&vCenter[i].x, &vCenter[i].y,*/
+					&vClassNums[i]);
 
-			// Read bounding box
-			in >> vBBox[i].x; in >> vBBox[i].y; 
-			in >> vBBox[i].width;
+			vFilenames[i] = name;
 			vBBox[i].width -= vBBox[i].x; 
-			in >> vBBox[i].height;
 			vBBox[i].height -= vBBox[i].y;
+			/*vCenter[i].x = vBBox[i].width/2;
+			vCenter[i].y = vBBox[i].height/2;*/
 
 			if(vBBox[i].width<p_width || vBBox[i].height<p_height) {
 				throw string_exception("Width or height are too small in file" + vFilenames[i]);  
 			}
 
-			// Read center points
-			vCenter[i].resize(numop);
-			for(unsigned int c=0; c<numop; ++c) {			
-				in >> vCenter[i][c].x;
-				in >> vCenter[i][c].y;
-			}				
+			int cl = vClassNums[i];
+			class_instances[cl]++;
+			if (w_aver)
+				width_aver[cl] += vBBox[i].width;
+			if (vBBox[i].height < height_min[cl])
+				height_min[cl] = vBBox[i].height;
 		}
 
-		in.close();
+		if (w_aver)
+			for (int i = 0; i < num_of_classes; i++)
+			{
+				width_aver[i] /= class_instances[i];
+			}
+
+		if (fclose (pFile) != 0)
+		{
+			throw string_exception("Failed to close " + sfiles);
+		}
 	} else {
 		throw string_exception("File not found " + sfiles);
 	}
@@ -343,72 +380,50 @@ void GALL_app::show() {
 }
 
 // Run detector
-void GALL_app::detect(CRForestDetector& crDetect) {
+void GALL_app::detect(CRForestDetector& crDetect, vector<string>& filenames, vector<Results>& results) {
 
 	// Load image names
-	vector<string> vFilenames;
-	loadImFile(vFilenames);
+	loadImFile(filenames);
 				
 	char buffer[200];
-
-	// Storage for output
-	vector<vector<cv::Mat> > vImgDetect(scales.size());	
+	results.resize(filenames.size());
 
 	// Run detector for each image
-	for(unsigned int i=0; i<vFilenames.size(); ++i) {
-
+	for (int i = 0; i<filenames.size(); i++)
+	{
+		// Storage for output
+		vector<vector<cv::Mat> > vImgDetect(scales.size());	
 		// Load image
 		cv::Mat img;
-		img = cv::imread((configpath + impath + "/" + vFilenames[i]).c_str(),CV_LOAD_IMAGE_COLOR);
+		string filename (configpath + impath + "/" + filenames[i]);	
+		img = cv::imread(filename.c_str(),CV_LOAD_IMAGE_COLOR);
 		if(!img.data) {
-			string s ("Could not load image file: ");
-			s += imfiles;
-			s += "/";
-			s += vFilenames[i];
+			string s ("Could not load image file: " + imfiles + "/" + filenames[i]);
 			throw  string_exception(s);
-		}	
-
-		// Prepare scales
-		for(unsigned int k=0;k<vImgDetect.size(); ++k) {
-			vImgDetect[k].resize(ratios.size());
-			for(unsigned int c=0;c<vImgDetect[k].size(); ++c) {
-				vImgDetect[k][c].create ( cvSize(int(img.cols*scales[k]+0.5),int(img.rows*scales[k]+0.5)), CV_32FC1 );
-			}
 		}
 
-		// Detection for all scales
-		crDetect.detectPyramid(img, vImgDetect, ratios);
+		// Detection for all scales and classes
+		crDetect.detectPyramid(img, scales, vImgDetect, results[i]);
 
 		// Store result
-		for(unsigned int k=0;k<vImgDetect.size(); ++k) {
-			cv::Mat tmp ( vImgDetect[k][0].rows, vImgDetect[k][0].cols, CV_8UC1);
-			for(unsigned int c=0;c<vImgDetect[k].size(); ++c) {
+		for(unsigned int k = 0; k < vImgDetect.size(); k++) {
+			for(unsigned int c = 0; c < vImgDetect[k].size(); ++c) {
 				
-				vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
-				sprintf_s(buffer,"%s/detect-%d_sc%d_c%d.png",(configpath + outpath).c_str(),i,k,c);
-				imwrite( buffer, tmp );
-				
-				cv::Mat detectedMax;
-				std::vector<cv::Point> maxs;
-				if (localMaxima(tmp, detectedMax, 11, maxs))
-				{
-					sprintf_s(buffer,"%s/detect_max-%d_sc%d_c%d.png",(configpath + outpath).c_str(),i,k,c);
-					imwrite( buffer, detectedMax );
-				}
-
-				detectedMax.release();
+				//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
+				// int k - scale, c - index of class
+				sprintf_s(buffer,"%s/%s_scale%d_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, filenames[i].c_str());
+				imwrite( buffer, vImgDetect[k][c] );
 
 				vImgDetect[k][c].release();
 				
 			}
-			tmp.release();
 		}
 
 		// Release image
 		img.release();
 
 	}
-
+	//outputFile.close();
 }
 
 // Extract patches from training data
@@ -416,19 +431,23 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 		
 	vector<string> vFilenames;
 	vector<cv::Rect> vBBox;
-	vector<vector<cv::Point> > vCenter;
+	vector<cv::Point> vCenter;
+	vector<unsigned int> vClassNums; // to what class object belongs
 
 	// load positive file list
-	loadTrainPosFile(vFilenames,  vBBox, vCenter);
+	if (width_aver.size() == 0)
+		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums, width_aver);
+	else
+		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums); // all images will be resized to one width pointed in config file
 
 	// load postive images and extract patches
+	vCenter.resize(vFilenames.size());
 	for(int i=0; i<(int)vFilenames.size(); ++i) 
 	{
-
 	  if(i%50==0) cout << i << " " << flush;
 
-	  if(subsamples_pos <= 0 || (int)vFilenames.size()<=subsamples_pos || (cvRandReal(pRNG)*double(vFilenames.size()) < double(subsamples_pos)) ) {
-
+	  if(subsamples_pos <= 0 || (int)vFilenames.size()<=subsamples_pos || (cvRandReal(pRNG)*double(vFilenames.size()) < double(subsamples_pos)) ) 
+	  {
 			// Load image
 			cv::Mat img;
 			string sfile (configpath+trainpospath + "/" + vFilenames[i]);
@@ -438,13 +457,19 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 			}	
 
 			// Extract positive training patches
-			Train.extractPatches(img, samples_pos, 1, &vBBox[i], &vCenter[i]); 
+			float dx = width_aver[vClassNums[i]]/(float)vBBox[i].width;
+			cv::Mat to_extract;
+			cv::resize(img(vBBox[i]), to_extract, cv::Size(), dx, dx);
+			vCenter[i].x = to_extract.cols/2;
+			vCenter[i].y = to_extract.rows/2;
+			cv::imwrite((configpath + train_rescaled_cropped_path + "/" + vFilenames[i]).c_str(), to_extract);
+
+			Train.extractPatches(to_extract, samples_pos, vClassNums[i], &vCenter[i]); 
 
 			// Release image
 			img.release();
-
-	  }
-			
+			to_extract.release();
+	  }		
 	}
 	cout << endl;
 
@@ -469,93 +494,15 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 
 			// Extract negative training patches
 			if(vBBox.size()==vFilenames.size())
-				Train.extractPatches(img, samples_neg, 0, &vBBox[i]); 
+				Train.extractPatches(img(vBBox[i]), samples_neg, num_of_classes); // enumeration from 0, so index num_of_classes - index of background!
 			else
-				Train.extractPatches(img, samples_neg, 0); 
+				Train.extractPatches(img, samples_neg, num_of_classes); 
 
 			// Release image
 			img.release();
-
 		}
 			
 	}
-}
-
-bool GALL_app::localMaxima(cv::Mat src,cv::Mat &dst,int squareSize, std::vector<cv::Point>& locations)
-{
-	if (squareSize==0)
-	{
-		dst = src.clone();
-		return false;
-	}
-
-	cv::Mat m0;
-	dst = src.clone();
-	cv::Point maxLoc(0,0);
-
-	//1.Be sure to have at least 3x3 for at least looking at 1 pixel close neighbours
-	//  Also the window must be <odd>x<odd>
-	//SANITYCHECK(squareSize,3,1);
-	int sqrCenter = (squareSize-1)/2;
-	if (squareSize%2 == 0)
-	{
-		squareSize--;
-	}
-
-
-	//2.Create the localWindow mask to get things done faster
-	//  When we find a local maxima we will multiply the subwindow with this MASK
-	//  So that we will not search for those 0 values again and again
-	cv::Mat localWindowMask = cv::Mat::zeros(cv::Size(squareSize,squareSize),CV_8U);//boolean
-	localWindowMask.at<unsigned char>(sqrCenter,sqrCenter)=1;
-
-	//3.Find the threshold value to threshold the image
-		//this function here returns the peak of histogram of picture
-		//the picture is a thresholded picture it will have a lot of zero values in it
-		//so that the second boolean variable says :
-		//  (boolean) ? "return peak even if it is at 0" : "return peak discarding 0"
-	int thrshld =  maxUsedValInHistogramData(dst);
-	if (thrshld == 0) //black image, no max
-		return false;
-	threshold(dst, m0, thrshld, 1, 3); // 5th parameter 0 === THRESH_BINARY
-
-	//4.Now delete all thresholded values from picture
-	dst = dst.mul(m0);
-
-	//put the src in the middle of the big array
-	for (int row=sqrCenter;row<dst.size().height-sqrCenter;row++)
-	{
-		for (int col=sqrCenter;col<dst.size().width-sqrCenter;col++)
-			{
-			//1.if the value is zero it can not be a local maxima
-			if (dst.at<unsigned char>(row,col)==0)
-				continue;
-			//2.the value at (row,col) is not 0 so it can be a local maxima point
-			m0 =  dst.colRange(col-sqrCenter,col+sqrCenter+1).rowRange(row-sqrCenter,row+sqrCenter+1);
-			minMaxLoc(m0,NULL,NULL,NULL,&maxLoc);
-			//if the maximum location of this subWindow is at center
-			//it means we found the local maxima
-			//so we should delete the surrounding values which lies in the subWindow area
-			//hence we will not try to find if a point is at localMaxima when already found a neighbour was
-			if ((maxLoc.x==sqrCenter)&&(maxLoc.y==sqrCenter))
-			{
-				locations.push_back(cv::Point(col, row));
-				m0 = m0.mul(localWindowMask);
-								//we can skip the values that we already made 0 by the above function
-				col+=sqrCenter;
-			}
-		}
-	}
-	return true;
-}
-
-int GALL_app::maxUsedValInHistogramData(cv::Mat src)
-{
-	HierarhicalThreshold ht(src);
-	int bins = 10;
-	if (ht.ProcessImage(1, bins))
-		return 255/bins*ht.thresholds_for_max_sigma[0];
-	return 0;
 }
 
 GALL_app::~GALL_app(void)

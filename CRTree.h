@@ -9,8 +9,7 @@
 
 #include "CRPatch.h"
 
-//#include <iostream>
-//#include <fstream>
+using namespace std;
 
 // Auxilary structure
 struct IntIndex {
@@ -26,21 +25,21 @@ struct LeafNode {
 
 	// IO functions
 	void show(int delay, int width, int height); 
-	void print() const {
-		std::cout << "Leaf " << vCenter.size() << " "  << pfg << std::endl;
-	}
 
-	// Probability of foreground
-	float pfg;
+	// Probabilities for different classes of objects  pfg[0] - for 1st class, pfg[1] - for 2nd class etc.
+	vector<float> pfg; 
+	// Vectors for sizes of objects of different classes. vSize[i] - for classes, vSize[i][j] - for patches
+	vector<vector<float> > vRatio;
 	// Vectors from object center to training patches
-	std::vector<std::vector<cv::Point> > vCenter;	
+	vector<vector<cv::Point> > vCenter;	
 };
 
 class CRTree {
 public:
 	// Constructors
 	CRTree(const char* filename);
-	CRTree(int min_s, int max_d, int cp, CvRNG* pRNG) : min_samples(min_s), max_depth(max_d), num_leaf(0), num_cp(cp), cvRNG(pRNG) {
+	// cp - number of classes!!!
+	CRTree(int min_s, int max_d, int class_num, CvRNG* pRNG) : min_samples(min_s), max_depth(max_d), num_leaf(0), num_classes(class_num), cvRNG(pRNG){
 		num_nodes = (int)pow(2.0,int(max_depth+1))-1;
 		// num_nodes x 7 matrix as vector
 		treetable = new int[num_nodes * 7];
@@ -53,7 +52,7 @@ public:
 
 	// Set/Get functions
 	unsigned int GetDepth() const {return max_depth;}
-	unsigned int GetNumCenter() const {return num_cp;}
+	unsigned int GetNumClasses() const {return num_classes;}
 
 	// Regression
 	const LeafNode* regression(uchar** ptFCh, int stepImg) const;
@@ -71,17 +70,29 @@ public:
 private: 
 
 	// Private functions for training
-	void grow(const std::vector<std::vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, float pnratio);
-	void makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, float pnratio, int node);
-	bool optimizeTest(std::vector<std::vector<const PatchFeature*> >& SetA, std::vector<std::vector<const PatchFeature*> >& SetB, const std::vector<std::vector<const PatchFeature*> >& TrainSet, int* test, unsigned int iter, unsigned int mode);
+	void grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, vector<float> vRatio);
+	void makeLeaf(const vector<vector<const PatchFeature*> >& TrainSet, vector<float> vRatio, int node);
+	bool optimizeTest(vector<vector<const PatchFeature*> >& SetA, vector<vector<const PatchFeature*> >& SetB, const vector<vector<const PatchFeature*> >& TrainSet, int* test, unsigned int iter, unsigned int mode);
 	void generateTest(int* test, unsigned int max_w, unsigned int max_h, unsigned int max_c);
-	void evaluateTest(std::vector<std::vector<IntIndex> >& valSet, const int* test, const std::vector<std::vector<const PatchFeature*> >& TrainSet);
-	void split(std::vector<std::vector<const PatchFeature*> >& SetA, std::vector<std::vector<const PatchFeature*> >& SetB, const std::vector<std::vector<const PatchFeature*> >& TrainSet, const std::vector<std::vector<IntIndex> >& valSet, int t);
-	double measureSet(const std::vector<std::vector<const PatchFeature*> >& SetA, const std::vector<std::vector<const PatchFeature*> >& SetB, unsigned int mode) {
-	  if (mode==0) return InfGain(SetA, SetB); else return -distMean(SetA[1],SetB[1]);
+	void evaluateTest(vector<vector<IntIndex> >& valSet, const int* test, const vector<vector<const PatchFeature*> >& TrainSet);
+	void split(vector<vector<const PatchFeature*> >& SetA, vector<vector<const PatchFeature*> >& SetB, const vector<vector<const PatchFeature*> >& TrainSet, const vector<vector<IntIndex> >& valSet, int t);
+	double measureSet(const vector<vector<const PatchFeature*> >& SetA, const vector<vector<const PatchFeature*> >& SetB, unsigned int mode) {
+	  if (mode==0) 
+		  return InfGain(SetA, SetB); 
+	  else 
+		  return -distMean(SetA, SetB);
 	}
-	double distMean(const std::vector<const PatchFeature*>& SetA, const std::vector<const PatchFeature*>& SetB);
-	double InfGain(const std::vector<std::vector<const PatchFeature*> >& SetA, const std::vector<std::vector<const PatchFeature*> >& SetB);
+	double distMean(const vector<vector<const PatchFeature*>>& SetA, const vector<vector<const PatchFeature*>>& SetB)
+	{
+		double sum = 0;
+		for (int i = 0; i < num_classes; i++)
+		{
+			sum += distMean(SetA[i],SetB[i]);
+		}
+		return sum;
+	}
+	double distMean(const vector<const PatchFeature*>& SetA, const vector<const PatchFeature*>& SetB);
+	double InfGain(const vector<vector<const PatchFeature*> >& SetA, const vector<vector<const PatchFeature*> >& SetB);
 
 
 	// Data structure
@@ -104,8 +115,11 @@ private:
 	// number of leafs
 	unsigned int num_leaf;
 
-	// number of center points per patch
-	unsigned int num_cp;
+	// number of classes
+	unsigned int num_classes; // == class_number.
+
+	cv::Size patch_size;
+	unsigned int channels; // 32
 
 	//leafs as vector
 	LeafNode* leaf;

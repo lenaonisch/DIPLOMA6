@@ -20,6 +20,7 @@ public:
 	string outpath;	// Output path
 	int out_scale; // scale factor for output image (default: 128)
 	string trainpospath; 	// Path to positive examples
+	string train_rescaled_cropped_path;
 	string trainposfiles;	// File with postive examples
 	int subsamples_pos;	// Subset of positive images -1: all images
 	unsigned int samples_pos; 	// Sample patches from pos. examples
@@ -27,6 +28,12 @@ public:
 	string trainnegfiles; // File with postive examples
 	int subsamples_neg;// Subset of neg images -1: all images
 	unsigned int samples_neg; // Samples from pos. examples
+	unsigned int binary_tests_iterations;
+	string classmap_file;
+	int num_of_classes; //number of classes
+	vector<string> classes; //class names
+	vector<int> width_aver; // average width of training images for each class
+	vector<int> height_min; // minimum height detected on training images for each class
 
 	// offset for saving tree number
 	int off_tree;
@@ -36,15 +43,17 @@ public:
 
 	void loadConfig(string filename/*, int mode*/);
 	void run_train();
-	void run_detect();
+	void run_detect(vector<std::string>& filenames, vector<Results>& results);
 	void extract_Patches(CRPatch& Train, CvRNG* pRNG);
-	void detect(CRForestDetector& crDetect);
+	void detect(CRForestDetector& crDetect, vector<std::string>& filenames, vector<Results>& results);
 	void show();
 	void loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox);
-	void loadTrainPosFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox, std::vector<std::vector<cv::Point> >& vCenter);
-	void loadImFile(std::vector<string>& vFilenames);
-	bool localMaxima(cv::Mat src,cv::Mat &dst,int squareSize, std::vector<cv::Point>& locations);
-	int maxUsedValInHistogramData(cv::Mat src);
+	void loadTrainPosFile(std::vector<string>& vFilenames, 
+						  std::vector<cv::Rect>& vBBox, 
+						  /*std::vector<cv::Point>& vCenter,*/
+						  std::vector<unsigned int> & vClassNums,
+						  std::vector<int>& width_aver);
+	void loadImFile(vector<std::string>& filenames);
 
 	void createDirectory(string path)
 	{

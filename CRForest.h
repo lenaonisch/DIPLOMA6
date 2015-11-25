@@ -23,7 +23,7 @@ public:
 	void SetTrees(int n) {vTrees.resize(n);}
 	int GetSize() const {return vTrees.size();}
 	unsigned int GetDepth() const {return vTrees[0]->GetDepth();}
-	unsigned int GetNumCenter() const {return vTrees[0]->GetNumCenter();}
+	//unsigned int GetNumCenter() const {return vTrees[0]->GetNumCenter();}
 	
 	// Regression 
 	void regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const;
@@ -33,7 +33,7 @@ public:
 
 	// IO functions
 	void saveForest(const char* filename, unsigned int offset = 0);
-	void loadForest(const char* filename, int type = 0);
+	void loadForest(const char* filename);
 	void show(int w, int h) const {vTrees[0]->showLeaves(w,h);}
 
 	// Trees
@@ -50,7 +50,7 @@ inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar** p
 //Training
 inline void CRForest::trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples) {
 	for(int i=0; i < (int)vTrees.size(); ++i) {
-		vTrees[i] = new CRTree(min_s, max_d, TrData.vLPatches[1][0].center.size(), pRNG);
+		vTrees[i] = new CRTree(min_s, max_d, TrData.vLPatches.size()-1, pRNG);
 		vTrees[i]->growTree(TrData, samples);
 	}
 }
@@ -64,7 +64,7 @@ inline void CRForest::saveForest(const char* filename, unsigned int offset) {
 	}
 }
 
-inline void CRForest::loadForest(const char* filename, int type) {
+inline void CRForest::loadForest(const char* filename) {
 	char buffer[200];
 	for(unsigned int i=0; i<vTrees.size(); ++i) {
 		sprintf_s(buffer,"%s%03d.txt",filename,i);
