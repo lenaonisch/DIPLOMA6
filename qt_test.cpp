@@ -64,11 +64,15 @@ void qt_test::on_actionLoad_config_file_triggered()
 void qt_test::DisplayPositiveFiles()
 {
 	QList<QTreeWidgetItem *> items;
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < filenames.size(); ++i)
 	{
-		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString("item %1").arg(i)));
-		for (int j = 0;j<2;j++)
-			next->addChild(new QTreeWidgetItem(QStringList(QString("item %1: %2").arg(i).arg(j))));
+		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(filenames[i].c_str())));
+		Results* res = &results[i];
+		for (int j = 0;j < res->classes.size(); j++)
+		{
+			Rect* rect = &res->rects[j];
+			next->addChild(new QTreeWidgetItem(QStringList(QString("class %1: %2, %3->%4, %5").arg(res->classes[j]).arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height))));
+		}
 		items.append(next);
 	}
 	ui.treeResults->insertTopLevelItems(0, items);
@@ -111,8 +115,10 @@ void qt_test::on_actionBatch_detect_triggered()
 {
 	try
 	{
+		filenames.clear();
 		results.clear();
-		gall_forest_app.run_detect(results);
+		gall_forest_app.run_detect(filenames, results);
+		DisplayPositiveFiles();
 	}
 	catch (exception& e)
 	{
@@ -230,7 +236,7 @@ void qt_test::on_actionTest_local_max_triggered()
 	int squire = ui.lineEditSquire->text().toInt();
 	int threshold = ui.lineEditThreshold->text().toInt();
 	vector<cv::Point> maxs;
-	gall_forest_app.localMaxima(src, dst, squire, maxs);
+//	gall_forest_app.localMaxima(src, dst, squire, maxs);
 	QString str = "";
 	for (int i = 0;i<maxs.size();i++)
 	{
@@ -257,7 +263,8 @@ void qt_test::on_treeResults_clicked()
 {
 	
 	QTreeWidgetItem * parent = ui.treeResults->currentItem()->parent();
-	QString text = parent->text(0);
+	if (parent != 0)
+		QString text = parent->text(0);
 	QModelIndex model = ui.treeResults->currentIndex();
 	
 }

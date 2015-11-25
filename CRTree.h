@@ -29,7 +29,7 @@ struct LeafNode {
 	// Probabilities for different classes of objects  pfg[0] - for 1st class, pfg[1] - for 2nd class etc.
 	vector<float> pfg; 
 	// Vectors for sizes of objects of different classes. vSize[i] - for classes, vSize[i][j] - for patches
-	vector<vector<cv::Size> > vSize;
+	vector<vector<float> > vRatio;
 	// Vectors from object center to training patches
 	vector<vector<cv::Point> > vCenter;	
 };

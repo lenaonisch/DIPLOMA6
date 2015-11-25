@@ -45,7 +45,7 @@ CRTree::CRTree(const char* filename) {
 			fscanf (pFile, "%i", &dummy); // sequence number 
 			ptLN->pfg.resize(num_classes);
 			ptLN->vCenter.resize(num_classes);
-			ptLN->vSize.resize(num_classes);
+			ptLN->vRatio.resize(num_classes);
 			for (int p = 0; p < num_classes; p++) //  probabilities
 				fscanf (pFile, "%f",  &ptLN->pfg[p]);
 				
@@ -54,12 +54,12 @@ CRTree::CRTree(const char* filename) {
 			{
 				fscanf (pFile, " %c %i",  &symbol, &dummy); // "|" symbol, number of patches
 				ptLN->vCenter[p].resize(dummy);
-				ptLN->vSize[p].resize(dummy);
+				ptLN->vRatio[p].resize(dummy);
 				for(int i=0; i<dummy; ++i)
 				{
-					fscanf (pFile, " %c%i %i %i %i%c", 
+					fscanf (pFile, " %c%i %i %f%c", 
 								&bracket, &ptLN->vCenter[p][i].x, &ptLN->vCenter[p][i].y,
-										&ptLN->vSize[p][i].width, &ptLN->vSize[p][i].height,
+										&ptLN->vRatio[p][i],
 								&bracket);
 				}
 			}
@@ -121,7 +121,7 @@ bool CRTree::saveTree(const char* filename) const {
 				for(unsigned int k=0; k<ptLN->vCenter[p].size(); ++k) 
 				{
 					out << "[" << ptLN->vCenter[p][k].x << " " << ptLN->vCenter[p][k].y << " ";
-					out << ptLN->vSize[p][k].width << " " << ptLN->vSize[p][k].height << "] ";
+					out << ptLN->vRatio[p][k] << "] ";
 				}
 			}
 			out << endl; // end of leaf
@@ -246,7 +246,7 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 	vector<float> scaled_pb(num_classes, 0);
 	ptL->pfg.resize(num_classes, 0);
 	ptL->vCenter.resize(num_classes);
-	ptL->vSize.resize(num_classes);
+	ptL->vRatio.resize(num_classes);
 	float sum = 0;
 	for (int i = 0; i < num_classes; i++)
 	{
@@ -258,12 +258,11 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 		if (sum != 0)
 			ptL->pfg[i] = scaled_pb[i] / sum;
 		ptL->vCenter[i].resize( TrainSet[i].size() );
-		ptL->vSize[i].resize( TrainSet[i].size() );
+		ptL->vRatio[i].resize( TrainSet[i].size() );
 		for(unsigned int k = 0; k<TrainSet[i].size(); k++)
 		{
 			ptL->vCenter[i][k] = TrainSet[i][k]->center;
-			ptL->vSize[i][k].width = TrainSet[i][k]->size.width;
-			ptL->vSize[i][k].height = TrainSet[i][k]->size.height;
+			ptL->vRatio[i][k] = TrainSet[i][k]->ratio;
 		}
 	}
 

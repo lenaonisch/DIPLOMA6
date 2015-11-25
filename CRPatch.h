@@ -14,7 +14,7 @@ struct PatchFeature {
 public:
 	PatchFeature() {}
 
-	cv::Size size;
+	float ratio; // width/height;
 	cv::Point center;
 
 	std::vector<cv::Mat> vPatch;
@@ -30,7 +30,7 @@ public:
 
 	// Extract patches from image
 	// label - label of class
-	void extractPatches(cv::Mat img, unsigned int n, int label, cv::Rect* box = 0, cv::Point* vCenter = 0);
+	void extractPatches(cv::Mat img, unsigned int n, int label, cv::Point* vCenter = 0);
 
 	// Extract features from image
 	static void extractFeatureChannels(cv::Mat img, std::vector<cv::Mat>& vImg);

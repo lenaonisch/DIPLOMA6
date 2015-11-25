@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cv;
 
-void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, cv::Point * center) {
+void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Point * center) {
 	// extract features
 	vector<cv::Mat> vImg; // uchar, CV_8UC1
 	extractFeatureChannels(img, vImg);
@@ -18,15 +18,11 @@ void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, 
 	Mat tmp;
 	int offx = width/2; 
 	int offy = height/2;
+	float ratio = (float)img.rows/img.cols;
 
 	// generate x,y locations
 	Mat locations ( n, 1, CV_32SC2 );
-	if(box==0)
-		cv::randu(locations, Scalar(0,0,0,0), Scalar(img.cols-width,img.rows-height,0,0));
-		//cvRandArr( cvRNG, locations.data, CV_RAND_UNI, cvScalar(0,0,0,0), Scalar(img.cols-width,img.rows-height,0,0) );
-	else
-		cv::randu(locations, Scalar(box->x,box->y,0,0), Scalar(box->x+box->width-width,box->y+box->height-height,0,0));
-		//cvRandArr( cvRNG, locations.data, CV_RAND_UNI, cvScalar(box->x,box->y,0,0), Scalar(box->x+box->width-width,box->y+box->height-height,0,0) );
+	cv::randu(locations, Scalar(0,0,0,0), Scalar(img.cols-width,img.rows-height,0,0));
 
 	// reserve memory
 	unsigned int offset = vLPatches[label].size();
@@ -43,8 +39,7 @@ void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Rect* box, 
 		{
 			pf.center.x = point[0] + offx - (*center).x;
 			pf.center.y = point[1] + offy - (*center).y;
-			pf.size.height = box->height;
-			pf.size.width = box->width;
+			pf.ratio = ratio;
 		}
 
 		vLPatches[label].push_back(pf);

@@ -17,7 +17,8 @@ public:
 	GALL_app gall_forest_app;
 	cv::Mat currentImage;
 
-	QHash <QString, Results> results;
+	vector<Results> results;
+	vector<std::string> filenames;
 
 	qt_test(QWidget *parent = 0);
 	~qt_test();
