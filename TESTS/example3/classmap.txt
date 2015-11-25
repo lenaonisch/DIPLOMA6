@@ -1,0 +1,4 @@
+3
+0 carry
+1 wave1
+2 jump
