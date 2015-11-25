@@ -328,7 +328,7 @@ bool CRTree::optimizeTest  (vector<vector<const PatchFeature*> >& SetA,
 				split(tmpA, tmpB, TrainSet, valSet, tr);
 
 				// Do not allow empty set split (all patches end up in set A or B)
-				int ACount = 0, BCount;
+				int ACount = 0, BCount = 0;
 				for (int z = 0; z <= num_classes; z++)
 				{
 					ACount += tmpA[z].size();

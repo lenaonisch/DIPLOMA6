@@ -38,12 +38,15 @@ public:
 	// offset for saving tree number
 	int off_tree;
 
+	CRForestDetector crDetect;
+	CRForest crForest;
+
 	GALL_app();
 	~GALL_app(void);
 
 	void loadConfig(string filename/*, int mode*/);
 	void run_train();
-	void run_detect(vector<std::string>& filenames, vector<Results>& results);
+	void run_detect(bool& load_forest, vector<std::string>& filenames, vector<Results>& results);
 	void extract_Patches(CRPatch& Train, CvRNG* pRNG);
 	void detect(CRForestDetector& crDetect, vector<std::string>& filenames, vector<Results>& results);
 	void show();

@@ -160,10 +160,6 @@ void GALL_app::run_train()
 		// Init forest with number of trees
 	CRForest crForest( ntrees ); 
 
-	// Init random generator
-	//QTime t = QTime::currentTime();
-	//int seed = (int)t;
-
 	CvRNG cvRNG(cvGetTickCount ());
 						
 	// Create directory
@@ -195,25 +191,29 @@ void GALL_app::run_train()
 }
 
 // Init and start detector
-void GALL_app::run_detect(vector<string>& filenames, vector<Results>& results) {
-	// Init forest with number of trees
-	CRForest crForest( ntrees ); 
+void GALL_app::run_detect(bool& load_forest, vector<string>& filenames, vector<Results>& results) {
+	if (!load_forest)
+	{
+		// Init forest with number of trees
+		crForest = CRForest ( ntrees ); 
 
-	// Load forest
-	string fpath(configpath);
-	fpath += treepath;
-	crForest.loadForest(fpath.c_str());	
+		// Load forest
+		string fpath(configpath);
+		fpath += treepath;
+		crForest.loadForest(fpath.c_str());	
+		load_forest = true;
 
-	// Init detector
-	CRForestDetector crDetect(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), &width_aver, &height_min, out_scale);
-	crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
+		// Init detector
+		crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), &width_aver, &height_min, out_scale);
+		crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
 
-	// create directory for output
-	string path(configpath);
-	path += outpath;
-	QString q_path(path.c_str());
-	QDir dir(q_path);
-	dir.mkpath(dir.absolutePath());
+		// create directory for output
+		string path(configpath);
+		path += outpath;
+		QString q_path(path.c_str());
+		QDir dir(q_path);
+		dir.mkpath(dir.absolutePath());
+	}
 
 	// run detector
 	detect(crDetect, filenames, results);

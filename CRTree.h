@@ -48,6 +48,27 @@ public:
 		// allocate memory for leafs
 		leaf = new LeafNode[(int)pow(2.0,int(max_depth))];
 	}
+
+	CRTree(){}
+	CRTree operator=(CRTree& right)
+	{
+		if (this == &right) {
+            return *this;
+        }
+        
+		int* treetable = right.treetable;
+		min_samples = right.min_samples;
+		max_depth = right.max_depth;
+		num_nodes = right.num_nodes;
+		num_leaf = right.num_leaf;
+		num_classes = right.num_classes;
+		patch_size = right.patch_size;
+		channels = right.channels;
+		leaf = right.leaf;
+		cvRNG = right.cvRNG;
+
+		return *this;
+	}
 	~CRTree() {delete[] leaf; delete[] treetable;}
 
 	// Set/Get functions

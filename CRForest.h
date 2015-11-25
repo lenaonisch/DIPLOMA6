@@ -14,6 +14,16 @@ public:
 	CRForest(int trees = 0) {
 		vTrees.resize(trees);
 	}
+
+	CRForest& operator=(CRForest& right) { // copy/move constructor is called to construct arg
+		if (this == &right) {
+            return *this;
+        }
+        
+		vTrees = right.vTrees;
+
+		return *this;
+	}
 	~CRForest() {
 		for(std::vector<CRTree*>::iterator it = vTrees.begin(); it != vTrees.end(); ++it) delete *it;
 		vTrees.clear();

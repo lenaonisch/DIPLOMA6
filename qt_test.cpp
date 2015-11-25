@@ -4,6 +4,7 @@
 qt_test::qt_test(QWidget *parent)
 	: QMainWindow(parent)
 {
+	have_forest = false;
 	ui.setupUi(this);
 
 	ui.lblInput->setBackgroundRole(QPalette::Base);
@@ -35,8 +36,6 @@ void qt_test::on_actionLoad_config_file_triggered()
 	{
 		gall_forest_app.loadConfig(filename/*, mode*/);
 
-		DisplayPositiveFiles();
-
 		QMessageBox msg;
 		QString str("Config file has been loaded successfully!");
 		msg.setText(str);
@@ -55,7 +54,6 @@ void qt_test::on_actionLoad_config_file_triggered()
 	{
 		QMessageBox msg;
 		QString str(e.what());
-		msg.setIcon(QMessageBox::Icon::Critical);
 		msg.setText(str);
 		msg.exec();	
 	}
@@ -63,6 +61,7 @@ void qt_test::on_actionLoad_config_file_triggered()
 
 void qt_test::DisplayPositiveFiles()
 {
+	ui.treeResults->clear();
 	QList<QTreeWidgetItem *> items;
 	for (int i = 0; i < filenames.size(); ++i)
 	{
@@ -83,12 +82,12 @@ void qt_test::on_actionTrain_triggered()
 	try
 	{
 		gall_forest_app.run_train();
+		have_forest = true;
 	}
 	catch (exception& e)
 	{
 		QMessageBox msg;
 		QString str(e.what());
-		msg.setIcon(QMessageBox::Icon::Critical);
 		msg.setText(str);
 		msg.exec();	
 	}
@@ -104,7 +103,6 @@ void qt_test::on_actionShow_leaves_triggered()
 	{
 		QMessageBox msg;
 		QString str(e.what());
-		msg.setIcon(QMessageBox::Icon::Critical);
 		msg.setText(str);
 		msg.exec();	
 	}
@@ -117,14 +115,13 @@ void qt_test::on_actionBatch_detect_triggered()
 	{
 		filenames.clear();
 		results.clear();
-		gall_forest_app.run_detect(filenames, results);
+		gall_forest_app.run_detect(have_forest, filenames, results);
 		DisplayPositiveFiles();
 	}
 	catch (exception& e)
 	{
 		QMessageBox msg;
 		QString str(e.what());
-		msg.setIcon(QMessageBox::Icon::Critical);
 		msg.setText(str);
 		msg.exec();	
 	}
@@ -150,7 +147,7 @@ void qt_test::on_actionOpen_triggered()
 
 	if (dialog.exec() == QDialog::Accepted && dialog.selectedFiles().length()>0)
 	{
-		if (loadFile(dialog.selectedFiles().first()))
+		if (loadFile(dialog.selectedFiles().first(), 0))
 		{
 			currentImage = cv::imread(dialog.selectedFiles().first().toStdString());
 			ui.actionDetect->setEnabled(true);
@@ -177,7 +174,7 @@ void qt_test::on_actionOpen_triggered()
 
 }
 
-bool qt_test::loadFile(const QString &fileName)
+bool qt_test::loadFile(const QString &fileName, Results* res)
 {
     QImageReader reader(fileName);
     reader.setAutoTransform(true);
@@ -191,7 +188,21 @@ bool qt_test::loadFile(const QString &fileName)
         return false;
     }
 	
-	ui.lblInput->setPixmap(QPixmap::fromImage(image));
+	QPixmap pix = QPixmap::fromImage(image);
+	if (res != NULL)
+	{
+		QPainter *paint = new QPainter(&pix);
+
+		paint->setPen(*(new QColor("darkGreen")));
+		for (int i = 0; i < res->rects.size(); i++)
+		{
+			QRect rect(res->rects[i].x, res->rects[i].y, res->rects[i].width, res->rects[i].height);
+			paint->drawRect(rect);
+			paint->drawText(res->rects[i].x, res->rects[i].y, QString(gall_forest_app.classes[res->classes[i]].c_str()));
+		}
+	}
+
+	ui.lblInput->setPixmap(pix);
 	ui.lblInput->adjustSize();
 	scaleFactor = 1.0;
 
@@ -261,10 +272,16 @@ void qt_test::on_actionMean_shift_triggered()
 
 void qt_test::on_treeResults_clicked()
 {
-	
+	QString text;
 	QTreeWidgetItem * parent = ui.treeResults->currentItem()->parent();
 	if (parent != 0)
-		QString text = parent->text(0);
-	QModelIndex model = ui.treeResults->currentIndex();
+		text = parent->text(0);
+	else
+	{
+		text = ui.treeResults->currentItem()->text(0);
+		QModelIndex model = ui.treeResults->currentIndex();
+		int a = model.row();
+		loadFile(QString((gall_forest_app.configpath+gall_forest_app.impath+"\\").c_str())+text, &results[a]);
+	}
 	
 }

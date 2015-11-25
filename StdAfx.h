@@ -43,6 +43,7 @@
 #include <QMouseEvent>
 #include <QTreeWidgetItem>
 #include <QTreeWidget>
+#include <QPainter>
 
 #include <miscellaneous.h>
 // TODO: Установите здесь ссылки на дополнительные заголовки, требующиеся для программы

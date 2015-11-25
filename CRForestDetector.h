@@ -20,6 +20,25 @@ public:
 		out_scale = _out_scale;
 	}
 
+	CRForestDetector(){}
+
+	CRForestDetector& operator=(CRForestDetector& right) { // copy/move constructor is called to construct arg
+		if (this == &right) {
+            return *this;
+        }
+        
+		crForest = right.crForest;
+		width = right.width;
+		height = right.height;
+		prob_threshold = right.prob_threshold;
+		width_aver = right.width_aver;
+		height_min = right.height_min;
+		class_count = right.class_count;
+		out_scale = right.out_scale;
+
+		return *this;
+	}
+
 	// detect multi scale
 	void detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat> >& imgDetect, Results& result);
 	int maxUsedValInHistogramData(cv::Mat src);

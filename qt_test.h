@@ -16,13 +16,14 @@ public:
 
 	GALL_app gall_forest_app;
 	cv::Mat currentImage;
+	bool have_forest;
 
 	vector<Results> results;
 	vector<std::string> filenames;
 
 	qt_test(QWidget *parent = 0);
 	~qt_test();
-	bool loadFile(const QString &fileName);
+	bool loadFile(const QString &fileName, Results* res);
 	void scaleImage(double factor);
 	void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
