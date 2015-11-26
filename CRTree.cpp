@@ -39,28 +39,25 @@ CRTree::CRTree(const char* filename) {
 		// read tree leafs
 		LeafNode* ptLN = &leaf[0];
 		char symbol = '0';
-		char bracket = '0'; // fake initialization
 		for(unsigned int l=0; l<num_leaf; l++, ++ptLN) 
 		{
 			fscanf (pFile, "%i", &dummy); // sequence number 
 			ptLN->pfg.resize(num_classes);
 			ptLN->vCenter.resize(num_classes);
 			ptLN->vRatio.resize(num_classes);
-			for (int p = 0; p < num_classes; p++) //  probabilities
-				fscanf (pFile, "%f",  &ptLN->pfg[p]);
+			for (int p = 0; p < num_classes; p++){ //  probabilities
+				fscanf (pFile, "%f %f",  &ptLN->pfg[p], &ptLN->vRatio[p]);
+			}
 				
 			// read centers and rectangle's sizes. For each patch there are 4 numbers!
 			for (int p = 0; p < num_classes; p++)
 			{
 				fscanf (pFile, " %c %i",  &symbol, &dummy); // "|" symbol, number of patches
 				ptLN->vCenter[p].resize(dummy);
-				ptLN->vRatio[p].resize(dummy);
 				for(int i=0; i<dummy; ++i)
 				{
-					fscanf (pFile, " %c%i %i %f%c", 
-								&bracket, &ptLN->vCenter[p][i].x, &ptLN->vCenter[p][i].y,
-										&ptLN->vRatio[p][i],
-								&bracket);
+					fscanf (pFile, " %i %i", 
+								 &ptLN->vCenter[p][i].x, &ptLN->vCenter[p][i].y);
 				}
 			}
 		}
@@ -111,7 +108,7 @@ bool CRTree::saveTree(const char* filename) const {
 			out << l << " ";
 			// write probabilities
 			for (int p = 0; p<num_classes; p++)
-				out << ptLN->pfg[p] << " ";
+				out << ptLN->pfg[p] << " " << ptLN->vRatio[p]<< " ";
 
 			// write centers and rectangle's sizes. For each patch there are 4 numbers!
 			for (int p = 0; p<num_classes; p++)
@@ -120,8 +117,7 @@ bool CRTree::saveTree(const char* filename) const {
 				
 				for(unsigned int k=0; k<ptLN->vCenter[p].size(); ++k) 
 				{
-					out << "[" << ptLN->vCenter[p][k].x << " " << ptLN->vCenter[p][k].y << " ";
-					out << ptLN->vRatio[p][k] << "] ";
+					out << ptLN->vCenter[p][k].x << " " << ptLN->vCenter[p][k].y << " ";
 				}
 			}
 			out << endl; // end of leaf
@@ -258,12 +254,15 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 		if (sum != 0)
 			ptL->pfg[i] = scaled_pb[i] / sum;
 		ptL->vCenter[i].resize( TrainSet[i].size() );
-		ptL->vRatio[i].resize( TrainSet[i].size() );
 		for(unsigned int k = 0; k<TrainSet[i].size(); k++)
 		{
 			ptL->vCenter[i][k] = TrainSet[i][k]->center;
-			ptL->vRatio[i][k] = TrainSet[i][k]->ratio;
+			ptL->vRatio[i] += TrainSet[i][k]->ratio;
 		}
+		if (TrainSet[i].size() != 0)
+			ptL->vRatio[i] /= (float)TrainSet[i].size();
+		else
+			ptL->vRatio[i] = 1;
 	}
 
 	// Increase leaf counter

@@ -84,7 +84,7 @@ public:
 	}
 
 private:
-	void detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<vector<list<float>>>& ratios);
+	void detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios);
 	const CRForest* crForest;
 	int width;
 	int height;

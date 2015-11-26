@@ -9,7 +9,7 @@
 using namespace std;
 
 // imgDetect - vector.size == num_of_classes
-void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<vector<list<float>>>& ratios) {
+void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios) {
 
 	int img_width = img.rows;
 	// extract features
@@ -17,8 +17,11 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	CRPatch::extractFeatureChannels(img, vImg);
 
 	// reset output image
-	for(int c=0; c<(int)imgDetect.size(); ++c)
+	for(int c=0; c < class_count; ++c)
+	{
 		imgDetect[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC1); // CV_32FC1 !!
+		ratios[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC2);
+	}
 
 	// get pointers to feature channels
 	int stepImg;
@@ -31,12 +34,16 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 
 	// get pointer to output image
 	int stepDet;
-	float** ptDet = new float*[imgDetect.size()];
-	for(unsigned int c=0; c<imgDetect.size(); ++c)
+	int stepRatio;
+	float** ptDet = new float*[class_count];
+	float** ptRatio = new float*[class_count];
+	for(unsigned int c=0; c < class_count; ++c)
 	{
 		ptDet[c] = (float*)imgDetect[c].data;
+		ptRatio[c] = (float*)ratios[c].data;
 	}
 	stepDet = imgDetect[0].step1();
+	stepRatio = ratios[0].step1();
 
 	int xoffset = width/2;
 	int yoffset = height/2;
@@ -71,17 +78,19 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 					{*/
 						// voting weight for leaf 
 						float w = (*itL)->pfg[c] / float( (*itL)->vCenter[c].size() * result.size() );
+						float r = (*itL)->vRatio[c];
 
 						// vote for all points stored in the leaf
-						int k = 0;
-						for(vector<cv::Point>::const_iterator it = (*itL)->vCenter[c].begin(); it!=(*itL)->vCenter[c].end(); ++it, k++)
+						for(vector<cv::Point>::const_iterator it = (*itL)->vCenter[c].begin(); it!=(*itL)->vCenter[c].end(); ++it)
 						{
 							int x = int(cx - (*it).x + 0.5);
 							int y = cy-(*it).y;
 							if(y >= 0 && y < imgDetect[c].rows && x >= 0 && x<imgDetect[c].cols)
 							{
 								*(ptDet[c]+x+y*stepDet) += w;
-								ratios[c][img_width*y+x].push_back((*itL)->vRatio[c][k]);
+								//formula for pointer: *(ptM[mat_num] + row*step + col*channels_total + channel)
+								*(ptRatio[c] + y*stepRatio + x*2)+=r;
+								*(ptRatio[c] + y*stepRatio + x*2 + 1)+=1;
 							}
 						}
 					//} // end if
@@ -111,7 +120,7 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	delete[] ptFCh;
 	delete[] ptFCh_row;
 	delete[] ptDet;
-
+	delete[] ptRatio;
 }
 
 // img - input image
@@ -144,9 +153,7 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			cv::Mat cLevel (tmps[0].rows, tmps[0].cols, CV_8UC3);				
 			cv::resize( img, cLevel, cv::Size(tmps[0].cols, tmps[0].rows));//CV_INTER_LINEAR is default
 			
-			vector<vector<list<float>>> ratios(class_count);
-			for (int c = 0; c < class_count; c++)
-				ratios[c].resize(tmps[0].cols*tmps[0].rows); // vector of lists
+			vector<cv::Mat> ratios(class_count);
 
 			// detection
 			detectColor(cLevel, tmps, ratios);
@@ -156,7 +163,7 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			vector<MaxPoint> maxs;
 			for (int c = 0; c < class_count; c++) {
 				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
-				localMaxima(vImgDetect[i][c], detectedMax, cv::Size(width_aver[c], height_min[c]), maxs, c);	
+				localMaxima(vImgDetect[i][c], detectedMax, cv::Size(width_aver[c]/2, height_min[c]/2), maxs, c);	
 				tmps[c].release();
 			}
 
@@ -166,18 +173,20 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 				int cl = it->class_label;
 				result.classes.push_back(cl);
 				int w = width_aver[cl];
-				float ratio = 0;
-				int rat_count = 0;
-				for(list<float>::iterator _rat = ratios[cl][w * (it->point.y) + it->point.x].begin(); _rat!= ratios[cl][w*it->point.y+it->point.x].end(); _rat++){
-					rat_count++;
-					ratio += *_rat;
-				}
+				cv::Vec2f vec = ratios[cl].at<cv::Vec2f>(it->point.y, it->point.x);
+				float ratio = vec[0];
+				float rat_count = vec[1];
+
 				ratio /= rat_count;
 
 				int h = w/ratio;
 
 				result.rects.push_back(cv::Rect(it->point.x - w/2, it->point.y - h/2, w, h));
 			}
+
+			for (int z = 0; z < ratios.size(); z++)
+				ratios[z].release();
+			ratios.clear();
 				
 			detectedMax.release();
 			cLevel.release();
