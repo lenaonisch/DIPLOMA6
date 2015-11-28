@@ -116,6 +116,8 @@ void GALL_app::loadConfig(string filename)
 		in.getline(buffer,400);
 		in.getline(buffer,400);
 		in >> classmap_file;
+		read_classes();
+
 		// rescalsed path
 		in.getline(buffer, 400);
 		in.getline(buffer,400);
@@ -132,20 +134,6 @@ void GALL_app::loadConfig(string filename)
 			for (int i = 1; i<num_of_classes; i++)
 				in >>width_aver[i];
 		}
-		
-		ifstream in_class(configpath+classmap_file);
-		if(in_class.is_open()) {
-			in_class >> num_of_classes;
-			classes.resize(num_of_classes);
-			for (int i = 0; i < num_of_classes; i++)
-				in_class >> buffer >> classes[i];
-		}
-		else {
-			string s ("Classmap file not found ");
-			s += classmap_file;
-			throw  string_exception(s);
-		}
-		in_class.close();
 
 	} else {
 		string s ("Config file not found ");
@@ -182,12 +170,15 @@ void GALL_app::run_train()
 	crDetect.save((configpath + treepath + "forest_detector.txt").c_str());
 
 	// Train forest
-	crForest.trainForest(20, 15, &cvRNG, Train, binary_tests_iterations);
-
-	// Save forest
 	string spath(configpath);
 	spath += treepath;
-	crForest.saveForest(spath.c_str(), off_tree);
+	off_tree = 0;
+	crForest.trainForest(20, 15, &cvRNG, Train, binary_tests_iterations,spath.c_str(), off_tree);
+
+	//// Save forest
+	//string spath(configpath);
+	//spath += treepath;
+	//crForest.saveForest(spath.c_str(), off_tree);
 }
 
 // Init and start detector
@@ -226,26 +217,28 @@ void GALL_app::loadImFile(vector<std::string>& filenames) {
 
 	string path(configpath);
 	path += imfiles;
-	ifstream in(path.c_str());
-	if(in.is_open()) {
+
+	FILE * pFile = fopen (path.c_str(),"r");
+	if (pFile != NULL)
+	{
 
 		unsigned int size;
-		in >> size; //size = 10;
-		in.getline(buffer,400); 
+		fscanf (pFile, "%i", &size);
 		filenames.resize(size);
 
 		for(unsigned int i=0; i<size; ++i) {
-			in.getline(buffer,400); 
+			fscanf (pFile, "%s", &buffer);	
 			filenames[i] = buffer;
-			//vFilenames[i] = buffer;	
 		}
 
 	} else {
-		string s ("File not found ");
-		throw  string_exception(s+imfiles);
+		throw  string_exception("File not found " + imfiles);
 	}
 
-	in.close();
+	if (fclose (pFile) != 0)
+	{
+		throw string_exception("Failed to close " + path);
+	}
 }
 
 // load positive training image filenames

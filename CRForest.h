@@ -39,7 +39,7 @@ public:
 	void regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const;
 
 	// Training
-	void trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples);
+	void trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples, const char* filename, unsigned int offset);
 
 	// IO functions
 	void saveForest(const char* filename, unsigned int offset = 0);
@@ -58,10 +58,15 @@ inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar** p
 }
 
 //Training
-inline void CRForest::trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples) {
+inline void CRForest::trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples, const char* filename, unsigned int offset) {
+	char buffer[200];
 	for(int i=0; i < (int)vTrees.size(); ++i) {
 		vTrees[i] = new CRTree(min_s, max_d, TrData.vLPatches.size()-1, pRNG);
 		vTrees[i]->growTree(TrData, samples);
+
+		//and save
+		sprintf_s(buffer,"%s%03d.txt",filename,i+offset);
+		vTrees[i]->saveTree(buffer);
 	}
 }
 

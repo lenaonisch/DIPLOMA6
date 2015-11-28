@@ -64,6 +64,24 @@ public:
 		system (path.c_str());
 	}
 
+	void read_classes()
+	{
+		char buffer[400];
+		ifstream in_class(configpath+classmap_file);
+		if(in_class.is_open()) {
+			in_class >> num_of_classes;
+			classes.resize(num_of_classes);
+			for (int i = 0; i < num_of_classes; i++)
+				in_class >> buffer >> classes[i];
+		}
+		else {
+			string s ("Classmap file not found ");
+			s += classmap_file;
+			throw  string_exception(s);
+		}
+		in_class.close();
+	}
+
 private:
 	void replace(string& str, string what, string to_what)
 	{
