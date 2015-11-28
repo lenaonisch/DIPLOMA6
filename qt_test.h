@@ -31,6 +31,7 @@ private:
 	Ui::qt_testClass ui;
 	double scaleFactor;
 	void DisplayPositiveFiles();
+	void LoadRectsFromBWMasks();
 public slots:
 	void on_actionOpen_triggered();
 	void on_actionLoad_config_file_triggered();

@@ -47,7 +47,7 @@ void qt_test::on_actionLoad_config_file_triggered()
 		ui.actionShow_leaves->setEnabled(true);
 
 		results.clear();
-
+		have_forest = false;
 		//gall_forest_app.show();
 	}
 	catch (exception& e)
@@ -238,26 +238,9 @@ void qt_test::on_actionZoom_out_2_triggered()
 
 void qt_test::on_actionTest_local_max_triggered()
 {
-	cv::Mat src(currentImage.rows, currentImage.cols, CV_8UC1);
-	
-	cv::cvtColor( currentImage, src, CV_RGB2GRAY );
-
-	cv::Mat dst;
-	
-	int squire = ui.lineEditSquire->text().toInt();
-	int threshold = ui.lineEditThreshold->text().toInt();
-	vector<cv::Point> maxs;
-//	gall_forest_app.localMaxima(src, dst, squire, maxs);
-	QString str = "";
-	for (int i = 0;i<maxs.size();i++)
-	{
-		str +=maxs[i].x;
-		str+=",";
-		str+=maxs[i].y;
-		str+= ";   ";
-	}
-	ui.plainTextEdit_Console->appendPlainText(str);
-	cv::imshow("Max", dst);
+	//int squire = ui.lineEditSquire->text().toInt();
+	//int threshold = ui.lineEditThreshold->text().toInt();
+	//ui.plainTextEdit_Console->appendPlainText(str);
 }
 
 void qt_test::on_btnAddPositive_clicked()
@@ -284,4 +267,87 @@ void qt_test::on_treeResults_clicked()
 		loadFile(QString((gall_forest_app.configpath+gall_forest_app.impath+"\\").c_str())+text, &results[a]);
 	}
 	
+}
+
+void qt_test::LoadRectsFromBWMasks()
+{
+	///////
+	string outputfile = gall_forest_app.configpath+"/horses_rects.txt";
+	ofstream out(outputfile);
+	//////
+	string dirwhite = gall_forest_app.configpath+"/white/";
+	string list_file = dirwhite+"out.txt";
+	const char * filename = (list_file).c_str();
+	FILE * pFile = fopen (filename,"r");
+
+	int N;
+	fscanf(pFile, "%i", &N);
+	out<<N<<endl;
+
+	for (int i = 0; i<N; i++)
+	{
+		char buffer[200];
+		fscanf(pFile, "%s", &buffer);
+		string file = buffer;
+		cv::Mat bw;
+		bw = imread(dirwhite+file, 0);
+		bw.convertTo(bw, CV_8UC1);
+
+		int a,b,c,d;
+		bool break_ = false;
+		for (int y = 0; y<bw.rows;y++){
+			for (int x = 0; x<bw.cols;x++){
+				if (bw.at<uchar>(y,x) > 0){
+					b = y;
+					break_ = true;
+					break;
+				}
+			}
+			if (break_)
+				break;
+		}
+		break_ = false;
+		for (int x = 0; x<bw.cols;x++){
+			for (int y = 0; y<bw.rows;y++){
+				if (bw.at<uchar>(y,x) > 0){
+					a = x;
+					break_ = true;
+					break;
+				}
+			}
+			if (break_)
+				break;
+		}
+		/////////////
+		break_ = false;
+		for (int y = bw.rows-1; y>0;y--){
+			for (int x = 0; x<bw.cols;x++){
+				if (bw.at<uchar>(y,x) > 0){
+					d = y;
+					break_ = true;
+					break;
+				}
+			}
+			if (break_)
+				break;
+		}
+
+		break_ = false;
+		for (int x = bw.cols-1; x>0;x--){
+			for (int y = 0; y<bw.rows;y++){
+				if (bw.at<uchar>(y,x) > 0){
+					c = x;
+					break_ = true;
+					break;
+				}
+			}
+			if (break_)
+				break;
+		}
+
+
+		out<< file << '\t' << a << " " << b << " " << c << " " << d << " " << "0" << endl;
+	}
+	fclose(pFile);
+	out.close();
 }
