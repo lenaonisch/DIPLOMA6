@@ -86,25 +86,42 @@ void CRPatch::extractFeatureChannels(cv::Mat img, std::vector<cv::Mat>& vImg) {
 	
 	Size size(I_x.cols, I_x.rows);
   
+	short* I_xptr = (short*)I_x.data;
+	short* I_yptr = (short*)I_y.data;
+	int stepx = I_x.step1();
+	int stepy = I_y.step1();
+
 	// Orientation of gradients
-	for( int y = 0; y < size.height; y++ )
+	uchar* ptrImg1 = vImg[1].data;
+	int step1 = vImg[1].step1();
+	for( int y = 0; y < size.height; y++  )
+	{	
 		for( int x = 0; x < size.width; x++ ) 
 		{
 			// Avoid division by zero
-			float tmp = (float)I_x.at<short>(y,x);
+			float tmp = I_xptr[x];//(float)I_x.at<short>(y,x);
 			float tx = tmp + copysign(0.000001f, tmp);
 			// Scaling [-pi/2 pi/2] -> [0 80*pi]
-			vImg[1].at<uchar>(y,x)=uchar( ( atan((float)I_y.at<short>(y,x)/tx)+3.14159265f/2.0f ) * 80 ); 
+			ptrImg1[x]=uchar( ( atan(I_yptr[x]/tx)+3.14159265f/2.0f ) * 80 ); 
 		}
+		I_xptr+=stepx; I_yptr+=stepy; ptrImg1+=step1;
+	}
 	
+	I_xptr = (short*)I_x.data;
+	I_yptr = (short*)I_y.data;
 	// Magnitude of gradients
+	uchar* ptrImg2 = vImg[2].data;
+	int step2 = vImg[2].step1();
 	for(int y = 0; y < size.height; y++  )
+	{
 		for(int x = 0; x < size.width; x++ ) 
 		{
-			float xval = I_x.at<short>(y,x);
-			float yval = I_y.at<short>(y,x);
-			vImg[2].at<uchar>(y,x) = (uchar)( sqrt(xval*xval + yval*yval) );
+			float xval = I_xptr[x];
+			float yval = I_yptr[x];
+			ptrImg2[x] = (uchar)( sqrt(xval*xval + yval*yval) );
 		}
+		I_xptr+=stepx; I_yptr+=stepy; ptrImg2+=step2;
+	}
 
 	// 9-bin HOG feature stored at vImg[7] - vImg[15] 
 	hog.extractOBin(vImg[1], vImg[2], vImg, 7);
