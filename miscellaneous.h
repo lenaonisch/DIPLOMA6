@@ -34,6 +34,7 @@ public:
 	float pf; // probability
 	cv::Point point;
 	int class_label;
+	float ratio;
 
 	MaxPoint(){}
 	MaxPoint(int x, int y, float _pf, int _class_label) : class_label(_class_label), point(x,y), pf(_pf){}

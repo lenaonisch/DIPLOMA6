@@ -195,8 +195,8 @@ void GALL_app::run_detect(bool& load_forest, vector<string>& filenames, vector<R
 		load_forest = true;
 
 		// Init detector
-		crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), &width_aver, &height_min, out_scale);
-		crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
+		crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), num_of_classes,/*&width_aver, &height_min,*/ out_scale, (configpath + treepath + "forest_detector.txt").c_str());
+		//crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
 
 		// create directory for output
 		string path(configpath);
@@ -294,8 +294,8 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 			class_instances[cl]++;
 			if (w_aver)
 				width_aver[cl] += vBBox[i].width;
-			if (vBBox[i].height < height_min[cl])
-				height_min[cl] = vBBox[i].height;
+			/*if (vBBox[i].height < height_min[cl])
+				height_min[cl] = vBBox[i].height;*/
 		}
 
 		if (w_aver)
@@ -455,6 +455,8 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 			cv::resize(img(vBBox[i]), to_extract, cv::Size(), dx, dx);
 			vCenter[i].x = to_extract.cols/2;
 			vCenter[i].y = to_extract.rows/2;
+			if (to_extract.rows < height_min[vClassNums[i]])
+				height_min[vClassNums[i]] = to_extract.rows;
 			cv::imwrite((configpath + train_rescaled_cropped_path + "/" + vFilenames[i]).c_str(), to_extract);
 
 			Train.extractPatches(to_extract, samples_pos, vClassNums[i], &vCenter[i]); 

@@ -11,6 +11,17 @@
 class CRForestDetector {
 public:
 	// Constructor
+	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, int _class_count, /*vector<int>* aver_width, vector<int>* _height_min,*/ int _out_scale, const char* filename) : 
+				crForest(pRF), width(w), height(h), prob_threshold(prob_t)
+	{
+		class_count = _class_count;
+		//width_aver = *aver_width; // will be read from file
+		//height_min = *_height_min;
+		out_scale = _out_scale;
+
+		load(filename);
+	}
+
 	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, vector<int>* aver_width, vector<int>* _height_min, int _out_scale) : 
 				crForest(pRF), width(w), height(h), prob_threshold(prob_t)
 	{
@@ -42,17 +53,17 @@ public:
 	// detect multi scale
 	void detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat> >& imgDetect, Results& result);
 	int maxUsedValInHistogramData(cv::Mat src);
-	bool localMaxima(cv::Mat src,cv::Mat &dst, cv::Size size, vector<MaxPoint>& locations, int class_label);
+	bool localMaxima(cv::Mat src, cv::Size size, vector<MaxPoint>& locations, int class_label, int threshold);
 
 	void save(const char* filename) {
 		ofstream out(filename);
 		if(out.is_open()) {
 			//out << "# Number of classes" << endl;
-			out << class_count << endl;
-			//out << "# Width & height of patch" << endl;
+			//out << class_count << endl;
+			out << "# Width & height of patch" << endl;
 			out << width << " " << height << " " << endl;
 			//out << "# Out scale (copied from config.txt)" << endl;
-			out << out_scale << endl;
+			//out << out_scale << endl;
 			//out << "# Threshold to make leaf vote for particular class center" << endl;
 			out << prob_threshold << endl;
 			//out << "# Width for classes" << endl;
@@ -70,9 +81,9 @@ public:
 		FILE * pFile = fopen (filename,"r");
 		if (pFile != NULL)
 		{
-			fscanf (pFile, "%i", &class_count);
+			//fscanf (pFile, "%i", &class_count);
 			fscanf (pFile, "%i %i", &width, &height);
-			fscanf (pFile, "%i", &out_scale);
+			//fscanf (pFile, "%i", &out_scale);
 			fscanf (pFile, "%f", &prob_threshold);
 			width_aver.resize(class_count);
 			height_min.resize(class_count);

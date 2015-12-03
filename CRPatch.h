@@ -14,7 +14,7 @@ struct PatchFeature {
 public:
 	PatchFeature() {}
 
-	float ratio; // width/height;
+	float ratio; // height/width!!;
 	cv::Point center;
 
 	std::vector<cv::Mat> vPatch;

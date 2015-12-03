@@ -138,7 +138,8 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 
 		vImgDetect.resize(scales.size());
 
-
+		vector<MaxPoint> maxs;
+		int max_index = 0;
 		// run detector for all scales
 		for(int i=0; i < scales.size(); i++) 
 		{
@@ -158,40 +159,62 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			// detection
 			detectColor(cLevel, tmps, ratios);
 
-			// find local maxima for classes
-			cv::Mat detectedMax;
-			vector<MaxPoint> maxs;
+			int treshold = 0;
+			
 			for (int c = 0; c < class_count; c++) {
 				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
-				localMaxima(vImgDetect[i][c], detectedMax, cv::Size(width_aver[c]/2, height_min[c]/2), maxs, c);	
+				int t = maxUsedValInHistogramData(vImgDetect[i][c]);
+				if (t>treshold) treshold = t; 
 				tmps[c].release();
 			}
+			for (int c = 0; c < class_count; c++)
+				localMaxima(vImgDetect[i][c], cv::Size(width_aver[c]*scales[i], height_min[c]*scales[i]), maxs, c, treshold);
 
-			// convert to Results
-			for (vector<MaxPoint>::iterator it = maxs.begin(); it != maxs.end(); it++)
+			for (int k = maxs.size()-1; k>=max_index;k--)
 			{
-				int cl = it->class_label;
-				result.classes.push_back(cl);
-				int w = width_aver[cl];
-				cv::Vec2f vec = ratios[cl].at<cv::Vec2f>(it->point.y, it->point.x);
-				float ratio = vec[0];
-				float rat_count = vec[1];
-
-				ratio /= rat_count;
-
-				int h = w/ratio;
-
-				result.rects.push_back(cv::Rect(it->point.x - w/2, it->point.y - h/2, w, h));
+				int cl = maxs[k].class_label;
+				cv::Vec2f vec = ratios[cl].at<cv::Vec2f>(maxs[k].point.y, maxs[k].point.x);
+				maxs[k].ratio = vec[0]/(float)vec[1];
+				maxs[k].point.x /= scales[i];
+				maxs[k].point.y /= scales[i];
 			}
+			max_index = maxs.size();
 
 			for (int z = 0; z < ratios.size(); z++)
 				ratios[z].release();
 			ratios.clear();
 				
-			detectedMax.release();
 			cLevel.release();
 		}
 
+		// convert to Results
+		for (int i = maxs.size()-1; i > 0; i--)
+		{
+			int cl = maxs[i].class_label;
+			int w = width_aver[cl];
+			int h = w*maxs[i].ratio;
+			cv::Rect rect(maxs[i].point.x-w/2, maxs[i].point.y-h/2, w,h);
+			for (int j = 0; j < i;j++)
+			{
+				if (rect.contains(maxs[j].point) && maxs[j].pf > maxs[i].pf)
+				{
+					maxs[i].pf = 0;
+					break;
+				}
+			}
+		}
+		for (int j = 0; j < maxs.size(); j++)
+		{
+			if (maxs[j].pf != 0)
+			{
+				result.classes.push_back(maxs[j].class_label); 
+				int w = width_aver[maxs[j].class_label];
+				int h = w * maxs[j].ratio;
+				result.rects.push_back(cv::Rect(maxs[j].point.x - w/2, maxs[j].point.y - h/2, w, h));
+			}
+		}
+
+		maxs.clear();
 		cout << "Time " << (double)(clock() - tstart)/CLOCKS_PER_SEC << " sec" << endl;
 
 	}
@@ -207,10 +230,10 @@ int CRForestDetector::maxUsedValInHistogramData(cv::Mat src)
 	return 0;
 }
 
-bool CRForestDetector::localMaxima(cv::Mat src,cv::Mat &dst, cv::Size size, std::vector<MaxPoint>& locations, int class_label)
+bool CRForestDetector::localMaxima(cv::Mat src, cv::Size size, std::vector<MaxPoint>& locations, int class_label, int threshold)
 {
 	cv::Mat m0;
-	dst = src.clone();
+	cv::Mat dst(src.rows, src.cols, CV_8UC1);
 	cv::Point maxLoc(0,0);
 
 	//1.Be sure to have at least 3x3 for at least looking at 1 pixel close neighbours
@@ -235,10 +258,9 @@ bool CRForestDetector::localMaxima(cv::Mat src,cv::Mat &dst, cv::Size size, std:
 		//the picture is a thresholded picture it will have a lot of zero values in it
 		//so that the second boolean variable says :
 		//  (boolean) ? "return peak even if it is at 0" : "return peak discarding 0"
-	int thrshld =  maxUsedValInHistogramData(dst);
-	if (thrshld == 0) //black image, no max
+	if (threshold == 0) //black image, no max
 		return false;
-	cv::threshold(dst, dst, thrshld, 1, CV_THRESH_TOZERO); // 5th parameter 3 === THRESH_BINARY
+	cv::threshold(src, dst, threshold, 1, CV_THRESH_TOZERO); // 5th parameter 3 === THRESH_BINARY
 
 	//put the src in the middle of the big array
 	for (int row=sqrCenter.y;row<dst.size().height-sqrCenter.y;row++)
@@ -261,8 +283,7 @@ bool CRForestDetector::localMaxima(cv::Mat src,cv::Mat &dst, cv::Size size, std:
 				// check probability of other classes in area around found point
 				for (vector<MaxPoint>::iterator mp = locations.begin(); mp != locations.end(); mp++)
 				{
-					if (col > mp->point.x - half_width && col < mp->point.x + half_width
-						&& row > mp->point.y - half_height && row < mp->point.y + half_height) // if inside rect
+					if (cv::Rect(mp->point.x - half_width, mp->point.y - half_height, size.width, size.height).contains(cv::Point(col,row)))
 					{
 						if (mp->pf < dst.at<uchar>(row, col)) // if probability of previously detected max is less, replace
 						{
