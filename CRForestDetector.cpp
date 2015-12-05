@@ -159,12 +159,12 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			// detection
 			detectColor(cLevel, tmps, ratios);
 
-			int treshold = 0;
+			int treshold = 150;
 			
 			for (int c = 0; c < class_count; c++) {
 				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
-				int t = maxUsedValInHistogramData(vImgDetect[i][c]);
-				if (t>treshold) treshold = t; 
+				//int t = maxUsedValInHistogramData(vImgDetect[i][c]);
+				//if (t>treshold) treshold = t; 
 				tmps[c].release();
 			}
 			for (int c = 0; c < class_count; c++)

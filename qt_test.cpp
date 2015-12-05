@@ -5,6 +5,8 @@ qt_test::qt_test(QWidget *parent)
 	: QMainWindow(parent)
 {
 	have_forest = false;
+	single_image_selected = false;
+	last_selected_result = -1;
 	ui.setupUi(this);
 
 	ui.lblInput->setBackgroundRole(QPalette::Base);
@@ -45,6 +47,8 @@ void qt_test::on_actionLoad_config_file_triggered()
 		ui.actionBatch_detect->setEnabled(true);
 		ui.actionTrain->setEnabled(true);
 		ui.actionShow_leaves->setEnabled(true);
+		if (single_image_selected)
+			ui.actionDetect->setEnabled(true);
 
 		results.clear();
 		have_forest = false;
@@ -63,9 +67,9 @@ void qt_test::DisplayPositiveFiles()
 {
 	ui.treeResults->clear();
 	QList<QTreeWidgetItem *> items;
-	for (int i = 0; i < filenames.size(); ++i)
+	for (int i = 0; i < filepaths.size(); ++i)
 	{
-		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(filenames[i].c_str())));
+		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(gall_forest_app.getFilename(filepaths[i]).c_str())));
 		Results* res = &results[i];
 		for (int j = 0;j < res->classes.size(); j++)
 		{
@@ -113,9 +117,10 @@ void qt_test::on_actionBatch_detect_triggered()
 {
 	try
 	{
-		filenames.clear();
+		last_selected_result = -1;
+		filepaths.clear();
 		results.clear();
-		gall_forest_app.run_detect(have_forest, filenames, results);
+		gall_forest_app.run_detect(have_forest, filepaths, results);
 		DisplayPositiveFiles();
 	}
 	catch (exception& e)
@@ -129,7 +134,20 @@ void qt_test::on_actionBatch_detect_triggered()
 
 void qt_test::on_actionDetect_triggered()
 {
-	
+	try
+	{
+		last_selected_result = -1;
+		results.clear();
+		gall_forest_app.run_detect(have_forest, filepaths[0], results);
+		DisplayPositiveFiles();
+	}
+	catch (exception& e)
+	{
+		QMessageBox msg;
+		QString str(e.what());
+		msg.setText(str);
+		msg.exec();	
+	}
 }
 
 void qt_test::on_actionOpen_triggered()
@@ -143,14 +161,21 @@ void qt_test::on_actionOpen_triggered()
                       /* picturesLocations.isEmpty() ?*/ QDir::currentPath() /*: picturesLocations.last()*/);
     dialog.setAcceptMode(QFileDialog::AcceptOpen);
     dialog.setMimeTypeFilters(mimeTypeFilters);
-    dialog.selectMimeTypeFilter("image/png");
+    dialog.selectMimeTypeFilter("image/jpeg");
 
 	if (dialog.exec() == QDialog::Accepted && dialog.selectedFiles().length()>0)
 	{
 		if (loadFile(dialog.selectedFiles().first(), 0))
 		{
-			currentImage = cv::imread(dialog.selectedFiles().first().toStdString());
-			ui.actionDetect->setEnabled(true);
+			filepaths.clear();
+			filepaths.push_back(dialog.selectedFiles().first().toStdString());
+			currentImage = cv::imread(filepaths[0]);
+			ui.treeResults->clear();
+			last_selected_result = -1;
+			if  (!gall_forest_app.configpath.empty())
+			{
+				ui.actionDetect->setEnabled(true);
+			}
 		}	
 	}
 
@@ -188,6 +213,7 @@ bool qt_test::loadFile(const QString &fileName, Results* res)
         return false;
     }
 	
+	single_image_selected = true;
 	QPixmap pix = QPixmap::fromImage(image);
 	if (res != NULL)
 	{
@@ -239,8 +265,36 @@ void qt_test::on_actionZoom_out_2_triggered()
 void qt_test::on_actionTest_local_max_triggered()
 {
 	//int squire = ui.lineEditSquire->text().toInt();
-	//int threshold = ui.lineEditThreshold->text().toInt();
+	int threshold = ui.lineEditThreshold->text().toInt();
 	//ui.plainTextEdit_Console->appendPlainText(str);
+	Size size;
+	size.height = 48;
+	size.width = 100;
+	CRForestDetector crdet;
+	vector<MaxPoint> locations;
+	cv::Mat tmp;
+	cvtColor( currentImage, tmp, CV_RGB2GRAY );
+	tmp.convertTo(tmp, CV_8UC1);
+	crdet.localMaxima(tmp, size, locations, 0, threshold);
+
+	/////////
+	
+	QPixmap* pix_ = new QPixmap(filepaths[0].c_str());
+	
+	QPainter *paint = new QPainter(pix_);
+
+	paint->setPen(*(new QColor("red")));
+	for (int i = 0; i < locations.size(); i++)
+	{
+		paint->drawEllipse(locations[i].point.x, locations[i].point.y, 3,3);
+		//paint->drawPoint(locations[i].point.x, locations[i].point.y);
+		
+	}
+	
+
+	ui.lblInput->setPixmap(*pix_);
+	ui.lblInput->adjustSize();
+	/////////
 }
 
 void qt_test::on_btnAddPositive_clicked()
@@ -264,7 +318,11 @@ void qt_test::on_treeResults_clicked()
 		text = ui.treeResults->currentItem()->text(0);
 		QModelIndex model = ui.treeResults->currentIndex();
 		int a = model.row();
-		loadFile(QString((gall_forest_app.configpath+gall_forest_app.impath+"\\").c_str())+text, &results[a]);
+		if (a != last_selected_result)
+		{
+			last_selected_result = a;
+			loadFile(QString((gall_forest_app.configpath+gall_forest_app.impath+"\\").c_str())+text, &results[a]);
+		}
 	}
 	
 }

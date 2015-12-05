@@ -45,10 +45,12 @@ public:
 	~GALL_app(void);
 
 	void loadConfig(string filename/*, int mode*/);
+	void loadForest();
 	void run_train();
 	void run_detect(bool& load_forest, vector<std::string>& filenames, vector<Results>& results);
+	void run_detect(bool& load_forest, string filename, vector<Results>& results);
 	void extract_Patches(CRPatch& Train, CvRNG* pRNG);
-	void detect(CRForestDetector& crDetect, vector<std::string>& filenames, vector<Results>& results);
+	void detect(CRForestDetector& crDetect, vector<std::string> filenames, vector<Results>& results);
 	void show();
 	void loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox);
 	void loadTrainPosFile(std::vector<string>& vFilenames, 
@@ -63,6 +65,12 @@ public:
 		replace (path, "/", "\\\\"); 
 		system (path.c_str());
 	}
+
+	string getFilename(string filepath){
+		std::size_t found = filepath.find_last_of("/");
+		return filepath.substr(found+1);	
+	}
+
 
 	void read_classes()
 	{

@@ -17,9 +17,11 @@ public:
 	GALL_app gall_forest_app;
 	cv::Mat currentImage;
 	bool have_forest;
+	bool single_image_selected;
 
 	vector<Results> results;
-	vector<std::string> filenames;
+	vector<std::string> filepaths;
+	int last_selected_result;
 
 	qt_test(QWidget *parent = 0);
 	~qt_test();

@@ -185,29 +185,51 @@ void GALL_app::run_train()
 void GALL_app::run_detect(bool& load_forest, vector<string>& filenames, vector<Results>& results) {
 	if (!load_forest)
 	{
-		// Init forest with number of trees
-		crForest = CRForest ( ntrees ); 
-
-		// Load forest
-		string fpath(configpath);
-		fpath += treepath;
-		crForest.loadForest(fpath.c_str());	
+		loadForest();
 		load_forest = true;
-
-		// Init detector
-		crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), num_of_classes,/*&width_aver, &height_min,*/ out_scale, (configpath + treepath + "forest_detector.txt").c_str());
-		//crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
-
-		// create directory for output
-		string path(configpath);
-		path += outpath;
-		QString q_path(path.c_str());
-		QDir dir(q_path);
-		dir.mkpath(dir.absolutePath());
 	}
 
 	// run detector
+	// Load image names
+	loadImFile(filenames);
 	detect(crDetect, filenames, results);
+}
+
+// Init and start detector
+void GALL_app::run_detect(bool& load_forest, string filename, vector<Results>& results) {
+	if (!load_forest)
+	{
+		loadForest();
+		load_forest = true;
+	}
+
+	// run detector
+	// Load image names
+	vector<string> filenames;
+	filenames.push_back(filename);
+	detect(crDetect,  filenames, results);
+}
+
+void GALL_app::loadForest()
+{
+	// Init forest with number of trees
+	crForest = CRForest ( ntrees ); 
+
+	// Load forest
+	string fpath(configpath);
+	fpath += treepath;
+	crForest.loadForest(fpath.c_str());	
+
+	// Init detector
+	crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), num_of_classes,/*&width_aver, &height_min,*/ out_scale, (configpath + treepath + "forest_detector.txt").c_str());
+	//crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
+
+	// create directory for output
+	string path(configpath);
+	path += outpath;
+	QString q_path(path.c_str());
+	QDir dir(q_path);
+	dir.mkpath(dir.absolutePath());
 }
 
 // load test image filenames
@@ -227,8 +249,9 @@ void GALL_app::loadImFile(vector<std::string>& filenames) {
 		filenames.resize(size);
 
 		for(unsigned int i=0; i<size; ++i) {
-			fscanf (pFile, "%s", &buffer);	
-			filenames[i] = buffer;
+			fscanf (pFile, "%s", &buffer);
+			string filename = buffer;	
+			filenames[i] = configpath + impath + "/" + filename;
 		}
 
 	} else {
@@ -373,10 +396,7 @@ void GALL_app::show() {
 }
 
 // Run detector
-void GALL_app::detect(CRForestDetector& crDetect, vector<string>& filenames, vector<Results>& results) {
-
-	// Load image names
-	loadImFile(filenames);
+void GALL_app::detect(CRForestDetector& crDetect, vector<string> filenames, vector<Results>& results) {
 				
 	char buffer[200];
 	results.resize(filenames.size());
@@ -388,15 +408,16 @@ void GALL_app::detect(CRForestDetector& crDetect, vector<string>& filenames, vec
 		vector<vector<cv::Mat> > vImgDetect(scales.size());	
 		// Load image
 		cv::Mat img;
-		string filename (configpath + impath + "/" + filenames[i]);	
-		img = cv::imread(filename.c_str(),CV_LOAD_IMAGE_COLOR);
+		img = cv::imread(filenames[i].c_str(),CV_LOAD_IMAGE_COLOR);
+		string short_name = getFilename(filenames[i]);
 		if(!img.data) {
-			string s ("Could not load image file: " + imfiles + "/" + filenames[i]);
+			string s ("Could not load image file: " + filenames[i]);
 			throw  string_exception(s);
 		}
 
 		// Detection for all scales and classes
 		crDetect.detectPyramid(img, scales, vImgDetect, results[i]);
+		filenames[i] = short_name;
 
 		// Store result
 		for(unsigned int k = 0; k < vImgDetect.size(); k++) {
@@ -404,7 +425,7 @@ void GALL_app::detect(CRForestDetector& crDetect, vector<string>& filenames, vec
 				
 				//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
 				// int k - scale, c - index of class
-				sprintf_s(buffer,"%s/%s_scale%d_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, filenames[i].c_str());
+				sprintf_s(buffer,"%s/%s_scale%d_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, short_name.c_str());
 				imwrite( buffer, vImgDetect[k][c] );
 
 				vImgDetect[k][c].release();
