@@ -26,7 +26,9 @@ public:
 	//classes[i] corresponds to rects[i]
 	QList<int> classes; // if defined - than multiclass detection. size must be the same as rects's size
 	QList<cv::Rect> rects;
-	Results(){}
+	vector<QColor> colors;
+	bool processed;
+	Results():processed(false){}
 };
 
 struct MaxPoint {

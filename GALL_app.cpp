@@ -182,7 +182,7 @@ void GALL_app::run_train()
 }
 
 // Init and start detector
-void GALL_app::run_detect(bool& load_forest, vector<string>& filenames, vector<Results>& results) {
+void GALL_app::run_detect(bool& load_forest, map<string, Results>& results) {
 	if (!load_forest)
 	{
 		loadForest();
@@ -191,12 +191,20 @@ void GALL_app::run_detect(bool& load_forest, vector<string>& filenames, vector<R
 
 	// run detector
 	// Load image names
-	loadImFile(filenames);
-	detect(crDetect, filenames, results);
+	vector<string> filenames;
+	for(map<string, Results>::iterator it = results.begin(); it != results.end(); ++it) {
+		if (!it->second.processed)
+			filenames.push_back(it->first);
+	}
+
+	vector<Results> res;
+	detect(crDetect, filenames, res);
+	for (int i = 0; i < filenames.size(); i++)
+		results[filenames[i]] = res[i];
 }
 
 // Init and start detector
-void GALL_app::run_detect(bool& load_forest, string filename, vector<Results>& results) {
+void GALL_app::run_detect(bool& load_forest, string filename, Results& results) {
 	if (!load_forest)
 	{
 		loadForest();
@@ -207,7 +215,10 @@ void GALL_app::run_detect(bool& load_forest, string filename, vector<Results>& r
 	// Load image names
 	vector<string> filenames;
 	filenames.push_back(filename);
-	detect(crDetect,  filenames, results);
+	vector<Results> res;
+	res.push_back(results);
+	detect(crDetect,  filenames, res);
+	results = res[0];
 }
 
 void GALL_app::loadForest()
@@ -417,6 +428,7 @@ void GALL_app::detect(CRForestDetector& crDetect, vector<string> filenames, vect
 
 		// Detection for all scales and classes
 		crDetect.detectPyramid(img, scales, vImgDetect, results[i]);
+		results[i].processed = true;
 		filenames[i] = short_name;
 
 		// Store result

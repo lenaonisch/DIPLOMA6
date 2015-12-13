@@ -12,10 +12,11 @@ qt_test::qt_test(QWidget *parent)
 	ui.lblInput->setBackgroundRole(QPalette::Base);
 	ui.lblInput->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 	ui.lblInput->setScaledContents(true);
+	ui.btnAddPositive->setEnabled(false);
+	ui.btnMarkNegative->setEnabled(false);
 
 	//ui.scrollAreaInput->setBackgroundRole(QPalette::Dark);
 	ui.scrollAreaInput->setWidget(ui.lblInput);
-	results.clear();
 }
 
 qt_test::~qt_test()
@@ -46,12 +47,18 @@ void qt_test::on_actionLoad_config_file_triggered()
 
 		ui.actionBatch_detect->setEnabled(true);
 		ui.actionTrain->setEnabled(true);
-		ui.actionShow_leaves->setEnabled(true);
+		ui.actionLoad_test_images->setEnabled(true);
 		if (single_image_selected)
 			ui.actionDetect->setEnabled(true);
 
-		results.clear();
+		ui.btnAddPositive->setEnabled(true);
+		ui.btnMarkNegative->setEnabled(true);
+
 		have_forest = false;
+
+		ui.lstClasses->clear();
+		for (int i = 0; i < gall_forest_app.classes.size(); i++)
+			ui.lstClasses->addItem(QString("class %1: %2").arg(i).arg(gall_forest_app.classes[i].c_str()));
 		//gall_forest_app.show();
 	}
 	catch (exception& e)
@@ -63,6 +70,29 @@ void qt_test::on_actionLoad_config_file_triggered()
 	}
 }
 
+void qt_test::AddPositiveRectToTree(QTreeWidgetItem* node, cv::Rect* rect, int class_)
+{
+	QString text = QString("%1: %2, %3->%4, %5").arg(gall_forest_app.classes[class_].c_str()).arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height);
+	QTreeWidgetItem* item = new QTreeWidgetItem(QStringList(text));
+	item->setToolTip(0, text);
+	node->addChild(item);
+}
+
+void qt_test::AddPositiveFile(QString filename)
+{
+	string fileName_std = filename.toStdString();
+	QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(gall_forest_app.getFilename(fileName_std).c_str())));
+	next->setToolTip(0, filename);
+	ui.treeResults->addTopLevelItem(next);
+}
+
+void qt_test::AddPositiveFile(string filename)
+{
+	QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(gall_forest_app.getFilename(filename).c_str())));
+	next->setToolTip(0, QString(filename.c_str()));
+	ui.treeResults->addTopLevelItem(next);
+}
+
 void qt_test::DisplayPositiveFiles()
 {
 	ui.treeResults->clear();
@@ -70,15 +100,15 @@ void qt_test::DisplayPositiveFiles()
 	for (int i = 0; i < filepaths.size(); ++i)
 	{
 		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(gall_forest_app.getFilename(filepaths[i]).c_str())));
-		Results* res = &results[i];
+		next->setToolTip(0, QString(filepaths[i].c_str()));
+		Results* res = &positive[filepaths[i]];
 		for (int j = 0;j < res->classes.size(); j++)
 		{
-			Rect* rect = &res->rects[j];
-			next->addChild(new QTreeWidgetItem(QStringList(QString("class %1: %2, %3->%4, %5").arg(res->classes[j]).arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height))));
+			AddPositiveRectToTree(next, &res->rects[j], res->classes[j]);
 		}
 		items.append(next);
 	}
-	ui.treeResults->insertTopLevelItems(0, items);
+	ui.treeResults->addTopLevelItems(items);
 }
 
 void qt_test::on_actionTrain_triggered()
@@ -118,9 +148,7 @@ void qt_test::on_actionBatch_detect_triggered()
 	try
 	{
 		last_selected_result = -1;
-		filepaths.clear();
-		results.clear();
-		gall_forest_app.run_detect(have_forest, filepaths, results);
+		gall_forest_app.run_detect(have_forest, positive);
 		DisplayPositiveFiles();
 	}
 	catch (exception& e)
@@ -137,8 +165,19 @@ void qt_test::on_actionDetect_triggered()
 	try
 	{
 		last_selected_result = -1;
-		results.clear();
-		gall_forest_app.run_detect(have_forest, filepaths[0], results);
+		int img_index; //res_index not used
+		GetSelectedImageResult(img_index);
+		if (img_index < 0)
+			img_index = filepaths.size()-1;
+		if (positive[filepaths[img_index]].processed)
+		{
+			QMessageBox msg;
+			QString str("Image has been already processed!");
+			msg.setText(str);
+			msg.exec();	
+			return;
+		}
+		gall_forest_app.run_detect(have_forest, filepaths[img_index], positive[filepaths[img_index]]);
 		DisplayPositiveFiles();
 	}
 	catch (exception& e)
@@ -167,10 +206,10 @@ void qt_test::on_actionOpen_triggered()
 	{
 		if (loadFile(dialog.selectedFiles().first(), 0))
 		{
-			filepaths.clear();
-			filepaths.push_back(dialog.selectedFiles().first().toStdString());
-			currentImage = cv::imread(filepaths[0]);
-			ui.treeResults->clear();
+			string str = dialog.selectedFiles().first().toStdString();
+			filepaths.push_back(str);
+			AddPositiveFile(str);
+
 			last_selected_result = -1;
 			if  (!gall_forest_app.configpath.empty())
 			{
@@ -224,7 +263,7 @@ bool qt_test::loadFile(const QString &fileName, Results* res)
 		{
 			QRect rect(res->rects[i].x, res->rects[i].y, res->rects[i].width, res->rects[i].height);
 			paint->drawRect(rect);
-			paint->drawText(res->rects[i].x, res->rects[i].y, QString(gall_forest_app.classes[res->classes[i]].c_str()));
+			paint->drawText(res->rects[i].x-2, res->rects[i].y-2, QString(gall_forest_app.classes[res->classes[i]].c_str()));
 		}
 	}
 
@@ -236,6 +275,36 @@ bool qt_test::loadFile(const QString &fileName, Results* res)
     return true;
 }
 
+void qt_test::DrawRect(cv::Rect rect, int class_, QColor* color)
+{
+	QPixmap pixmap = *(ui.lblInput->pixmap());
+	QPainter painter(&pixmap);              
+
+	painter.setPen(*color);
+	QRect qrect(rect.x, rect.y, rect.width, rect.height);
+	painter.drawRect(qrect);
+	painter.drawText(rect.x-2, rect.y-2, QString(gall_forest_app.classes[class_].c_str()));
+
+	ui.lblInput->setPixmap(pixmap);     
+}
+
+void qt_test::DrawRects(Results* res)
+{
+	QPixmap pixmap = *(ui.lblInput->pixmap());
+	QPainter painter(&pixmap);              
+
+	if (res != NULL)
+	{
+		for (int i = 0; i < res->rects.size(); i++)
+		{
+			painter.setPen(res->colors[i]);
+			QRect qrect(res->rects[i].x, res->rects[i].y, res->rects[i].width, res->rects[i].height);
+			painter.drawRect(qrect);
+			painter.drawText(qrect.x()-2, qrect.y()-2, QString(gall_forest_app.classes[res->classes[i]].c_str()));
+		}
+		ui.lblInput->setPixmap(pixmap); 
+	}
+}
 
 void qt_test::scaleImage(double factor)
 {
@@ -278,7 +347,7 @@ void qt_test::on_actionTest_local_max_triggered()
 	crdet.localMaxima(tmp, size, locations, 0, threshold);
 
 	/////////
-	
+	 
 	QPixmap* pix_ = new QPixmap(filepaths[0].c_str());
 	
 	QPainter *paint = new QPainter(pix_);
@@ -298,33 +367,138 @@ void qt_test::on_actionTest_local_max_triggered()
 }
 
 void qt_test::on_btnAddPositive_clicked()
-{
-	
+{ 
+	MouseLabel *lbl = ui.lblInput;
+	if (lbl->dx > 0 && lbl->dy > 0)
+	{
+		int img_index;
+		GetSelectedImageResult(img_index);
+		int class_num = ui.lstClasses->currentIndex();
+		img_index = (img_index >= 0) ? img_index: filepaths.size()-1;
+		string filename_ = filepaths[img_index];
+		cv::Rect rect(lbl->x, lbl->y, lbl->dx, lbl->dy);
+		Results& res = positive[filename_];
+		res.classes.push_back(class_num);
+		res.rects.push_back(rect);
+		QTreeWidgetItem* treeItem = ui.treeResults->topLevelItem(img_index);
+		AddPositiveRectToTree(treeItem, &rect, class_num);
+	}
+	else
+	{
+		QMessageBox msg;
+		QString str("Nothing selected!");
+		msg.setText(str);
+		msg.exec();	
+	}
+}
+
+void qt_test::on_btnAddNegative_clicked()
+{ 
+	if (ui.lblInput->x > 0 && ui.lblInput->y > 0)
+	{
+		int img_index, 
+			res_index; 
+		GetSelectedImageResult(img_index, res_index);
+
+	}
+	else
+	{
+
+	}
 }
 
 void qt_test::on_actionMean_shift_triggered()
-{
+{}
 
+void qt_test::GetSelectedImageResult(int& img_index)
+{
+	img_index = -1;
+	if (!ui.treeResults->currentItem())
+	{
+		return;
+	}
+	QTreeWidgetItem * parent = ui.treeResults->currentItem()->parent();
+	
+	if (parent != 0)
+	{
+		img_index = ui.treeResults->indexOfTopLevelItem(parent);
+	}
+	else
+	{
+		QModelIndex model = ui.treeResults->currentIndex();
+		img_index = model.row();
+	}
+}
+
+void qt_test::GetSelectedImageResult(int& img_index, int& res_index)
+{
+	res_index = -1;
+	img_index = -1;
+	if (!ui.treeResults->currentItem())
+	{
+		return;
+	}
+	QTreeWidgetItem * parent = ui.treeResults->currentItem()->parent();
+	
+	if (parent != 0)
+	{
+		res_index = ui.treeResults->currentIndex().row(); // index of result
+		img_index = ui.treeResults->indexOfTopLevelItem(parent);
+	}
+	else
+	{
+		QModelIndex model = ui.treeResults->currentIndex();
+		img_index = model.row();
+	}
+}
+
+void qt_test::GetSelectedImageResult(string& img_name, int& img_index, int& res_index)
+{
+	QTreeWidgetItem * parent = ui.treeResults->currentItem()->parent();
+	res_index = -1;
+	img_index;
+	if (parent != 0)
+	{
+		res_index = ui.treeResults->currentIndex().row(); // index of result
+		img_name = parent->text(0).toStdString();
+		img_index = ui.treeResults->indexOfTopLevelItem(parent);
+	}
+	else
+	{
+		img_name = ui.treeResults->currentItem()->text(0).toStdString();
+		QModelIndex model = ui.treeResults->currentIndex();
+		img_index = model.row();
+	}
 }
 
 void qt_test::on_treeResults_clicked()
 {
-	QString text;
-	QTreeWidgetItem * parent = ui.treeResults->currentItem()->parent();
-	if (parent != 0)
-		text = parent->text(0);
-	else
+	
+	int img_index, res_index;
+	string text;
+	GetSelectedImageResult(text, img_index, res_index);
+	if (img_index != last_selected_result)
 	{
-		text = ui.treeResults->currentItem()->text(0);
-		QModelIndex model = ui.treeResults->currentIndex();
-		int a = model.row();
-		if (a != last_selected_result)
+		last_selected_result = img_index;
+		loadFile(QString((filepaths[img_index]).c_str()), &positive[filepaths[img_index]]);
+		if (res_index >= 0)
 		{
-			last_selected_result = a;
-			loadFile(QString((gall_forest_app.configpath+gall_forest_app.impath+"\\").c_str())+text, &results[a]);
+			Results res = positive[filepaths[img_index]];
+			DrawRect(res.rects[res_index], res.classes[res_index], new QColor("violet"));
 		}
 	}
-	
+	else
+	{
+		if (res_index >= 0)
+		{
+			Results res = positive[filepaths[img_index]];
+			res.colors = vector<QColor> (res.classes.size(), QColor("darkGreen"));
+			res.colors[res_index] = QColor("violet");
+			DrawRects(&res);
+		}
+		
+	}
+
 }
 
 void qt_test::LoadRectsFromBWMasks()
@@ -406,6 +580,34 @@ void qt_test::LoadRectsFromBWMasks()
 
 		out<< file << '\t' << a << " " << b << " " << c << " " << d << " " << "0" << endl;
 	}
-	fclose(pFile);
+	std::fclose(pFile);
 	out.close();
+}
+
+void qt_test::on_actionLoad_test_images_triggered()
+{
+	cout<<"sdfsfsf";
+	try
+	{
+		QMessageBox::StandardButton reply;
+		reply = QMessageBox::question(this, "Clean", "Remove previously downloaded files?",
+			QMessageBox::Yes|QMessageBox::No|QMessageBox::Cancel);
+		if (reply == QMessageBox::Yes) {
+			filepaths.clear();
+			gall_forest_app.loadImFile(filepaths);
+		} else if (reply == QMessageBox::No){
+			vector<string> text_files;
+			gall_forest_app.loadImFile(text_files);
+			filepaths.insert(filepaths.end(), text_files.begin(), text_files.end());
+		}
+		else return;
+		DisplayPositiveFiles();
+	}
+	catch (exception& e)
+	{
+		QMessageBox msg;
+		QString str(e.what());
+		msg.setText(str);
+		msg.exec();	
+	}
 }

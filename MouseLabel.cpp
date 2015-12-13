@@ -3,6 +3,8 @@
 
 MouseLabel::MouseLabel(QWidget *tab)
 {
+	x = -1;y = -1;
+	dx = -1;dy = -1;
 	rubberBand = NULL;
 }
 
@@ -24,6 +26,24 @@ void MouseLabel::mouseMoveEvent(QMouseEvent * event)
 void MouseLabel::mouseReleaseEvent(QMouseEvent * event)
 {
 	QPoint cur = event->pos();
+	if (cur.x() == origin.x() && cur.y() == origin.y())
+	{
+		x = -1;
+		y = -1;
+		dx = -1;
+		dy = -1; return;
+	}
+
+	if (x < 0)
+		x = 0;
+	if (y < 0)
+		y = 0;
+
+	if (cur.x() > this->size().width())
+		cur.setX(this->size().width());
+	if (cur.y() > this->size().height())
+		cur.setY(this->size().height());
+
 	if (origin.x() > cur.x())
 	{
 		x = cur.x();

@@ -13,6 +13,7 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QButtonGroup>
+#include <QtWidgets/QComboBox>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
@@ -49,21 +50,22 @@ public:
     QAction *actionZoom_out_2;
     QAction *actionTest_local_max;
     QAction *actionMean_shift;
+    QAction *actionLoad_test_images;
     QWidget *centralWidget;
     QHBoxLayout *horizontalLayout_2;
     QTabWidget *tabWidget;
     QWidget *tab;
     QGridLayout *gridLayout;
+    QWidget *widget;
+    QHBoxLayout *horizontalLayout;
+    QComboBox *lstClasses;
+    QPushButton *btnAddPositive;
+    QPushButton *btnMarkNegative;
     QScrollArea *scrollAreaInput;
     QWidget *scrollAreaWidgetContents_2;
     MouseLabel *lblInput;
     QTreeWidget *treeNegative;
     QTreeWidget *treeResults;
-    QWidget *widget;
-    QHBoxLayout *horizontalLayout;
-    QPushButton *btnAddPositive;
-    QPushButton *btnMarkNegative;
-    QPushButton *btnClearAllSelections;
     QLabel *lblPositive;
     QLabel *lblNegative;
     QWidget *tab_2;
@@ -117,6 +119,9 @@ public:
         actionTest_local_max->setObjectName(QStringLiteral("actionTest_local_max"));
         actionMean_shift = new QAction(qt_testClass);
         actionMean_shift->setObjectName(QStringLiteral("actionMean_shift"));
+        actionLoad_test_images = new QAction(qt_testClass);
+        actionLoad_test_images->setObjectName(QStringLiteral("actionLoad_test_images"));
+        actionLoad_test_images->setEnabled(false);
         centralWidget = new QWidget(qt_testClass);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         horizontalLayout_2 = new QHBoxLayout(centralWidget);
@@ -138,6 +143,37 @@ public:
         gridLayout->setSpacing(6);
         gridLayout->setContentsMargins(11, 11, 11, 11);
         gridLayout->setObjectName(QStringLiteral("gridLayout"));
+        widget = new QWidget(tab);
+        widget->setObjectName(QStringLiteral("widget"));
+        sizePolicy.setHeightForWidth(widget->sizePolicy().hasHeightForWidth());
+        widget->setSizePolicy(sizePolicy);
+        horizontalLayout = new QHBoxLayout(widget);
+        horizontalLayout->setSpacing(6);
+        horizontalLayout->setContentsMargins(11, 11, 11, 11);
+        horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
+        lstClasses = new QComboBox(widget);
+        lstClasses->setObjectName(QStringLiteral("lstClasses"));
+
+        horizontalLayout->addWidget(lstClasses);
+
+        btnAddPositive = new QPushButton(widget);
+        btnAddPositive->setObjectName(QStringLiteral("btnAddPositive"));
+        QSizePolicy sizePolicy1(QSizePolicy::Minimum, QSizePolicy::Minimum);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(btnAddPositive->sizePolicy().hasHeightForWidth());
+        btnAddPositive->setSizePolicy(sizePolicy1);
+
+        horizontalLayout->addWidget(btnAddPositive);
+
+        btnMarkNegative = new QPushButton(widget);
+        btnMarkNegative->setObjectName(QStringLiteral("btnMarkNegative"));
+
+        horizontalLayout->addWidget(btnMarkNegative);
+
+
+        gridLayout->addWidget(widget, 0, 0, 1, 1);
+
         scrollAreaInput = new QScrollArea(tab);
         scrollAreaInput->setObjectName(QStringLiteral("scrollAreaInput"));
         scrollAreaInput->setMouseTracking(true);
@@ -153,11 +189,11 @@ public:
 
         lblInput = new MouseLabel(tab);
         lblInput->setObjectName(QStringLiteral("lblInput"));
-        QSizePolicy sizePolicy1(QSizePolicy::Ignored, QSizePolicy::Ignored);
-        sizePolicy1.setHorizontalStretch(0);
-        sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(lblInput->sizePolicy().hasHeightForWidth());
-        lblInput->setSizePolicy(sizePolicy1);
+        QSizePolicy sizePolicy2(QSizePolicy::Ignored, QSizePolicy::Ignored);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(lblInput->sizePolicy().hasHeightForWidth());
+        lblInput->setSizePolicy(sizePolicy2);
         lblInput->setScaledContents(true);
 
         gridLayout->addWidget(lblInput, 1, 1, 1, 1);
@@ -171,7 +207,7 @@ public:
         treeNegative->setHeaderHidden(true);
         treeNegative->header()->setVisible(false);
 
-        gridLayout->addWidget(treeNegative, 1, 4, 1, 1);
+        gridLayout->addWidget(treeNegative, 1, 3, 1, 1);
 
         treeResults = new QTreeWidget(tab);
         QTreeWidgetItem *__qtreewidgetitem1 = new QTreeWidgetItem();
@@ -181,48 +217,17 @@ public:
         treeResults->setUniformRowHeights(true);
         treeResults->setHeaderHidden(true);
 
-        gridLayout->addWidget(treeResults, 1, 3, 1, 1);
-
-        widget = new QWidget(tab);
-        widget->setObjectName(QStringLiteral("widget"));
-        sizePolicy.setHeightForWidth(widget->sizePolicy().hasHeightForWidth());
-        widget->setSizePolicy(sizePolicy);
-        horizontalLayout = new QHBoxLayout(widget);
-        horizontalLayout->setSpacing(6);
-        horizontalLayout->setContentsMargins(11, 11, 11, 11);
-        horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
-        btnAddPositive = new QPushButton(widget);
-        btnAddPositive->setObjectName(QStringLiteral("btnAddPositive"));
-        QSizePolicy sizePolicy2(QSizePolicy::Minimum, QSizePolicy::Minimum);
-        sizePolicy2.setHorizontalStretch(0);
-        sizePolicy2.setVerticalStretch(0);
-        sizePolicy2.setHeightForWidth(btnAddPositive->sizePolicy().hasHeightForWidth());
-        btnAddPositive->setSizePolicy(sizePolicy2);
-
-        horizontalLayout->addWidget(btnAddPositive);
-
-        btnMarkNegative = new QPushButton(widget);
-        btnMarkNegative->setObjectName(QStringLiteral("btnMarkNegative"));
-
-        horizontalLayout->addWidget(btnMarkNegative);
-
-        btnClearAllSelections = new QPushButton(widget);
-        btnClearAllSelections->setObjectName(QStringLiteral("btnClearAllSelections"));
-
-        horizontalLayout->addWidget(btnClearAllSelections);
-
-
-        gridLayout->addWidget(widget, 0, 0, 1, 1);
+        gridLayout->addWidget(treeResults, 1, 2, 1, 1);
 
         lblPositive = new QLabel(tab);
         lblPositive->setObjectName(QStringLiteral("lblPositive"));
 
-        gridLayout->addWidget(lblPositive, 0, 3, 1, 1);
+        gridLayout->addWidget(lblPositive, 0, 2, 1, 1);
 
         lblNegative = new QLabel(tab);
         lblNegative->setObjectName(QStringLiteral("lblNegative"));
 
-        gridLayout->addWidget(lblNegative, 0, 4, 1, 1);
+        gridLayout->addWidget(lblNegative, 0, 3, 1, 1);
 
         tabWidget->addTab(tab, QString());
         tab_2 = new QWidget();
@@ -272,7 +277,7 @@ public:
         menuFile->addAction(actionMean_shift);
         menuSetup->addAction(actionLoad_config_file);
         menuSetup->addAction(actionTrain);
-        menuSetup->addAction(actionShow_leaves);
+        menuSetup->addAction(actionLoad_test_images);
         menuView->addAction(actionZoom_in_2);
         menuView->addAction(actionZoom_out_2);
 
@@ -304,10 +309,10 @@ public:
         actionZoom_out_2->setShortcut(QApplication::translate("qt_testClass", "Ctrl+-", 0));
         actionTest_local_max->setText(QApplication::translate("qt_testClass", "test local max", 0));
         actionMean_shift->setText(QApplication::translate("qt_testClass", "mean shift", 0));
-        lblInput->setText(QString());
+        actionLoad_test_images->setText(QApplication::translate("qt_testClass", "Load test images", 0));
         btnAddPositive->setText(QApplication::translate("qt_testClass", "+", 0));
         btnMarkNegative->setText(QApplication::translate("qt_testClass", "-", 0));
-        btnClearAllSelections->setText(QApplication::translate("qt_testClass", "Clear All", 0));
+        lblInput->setText(QString());
         lblPositive->setText(QApplication::translate("qt_testClass", "Positive", 0));
         lblNegative->setText(QApplication::translate("qt_testClass", "Negative", 0));
         tabWidget->setTabText(tabWidget->indexOf(tab), QApplication::translate("qt_testClass", "General", 0));

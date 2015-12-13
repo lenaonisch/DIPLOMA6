@@ -1,3 +1,4 @@
+#pragma once
 #include "StdAfx.h"
 #include "GALL_app.h"
 
@@ -19,25 +20,36 @@ public:
 	bool have_forest;
 	bool single_image_selected;
 
-	vector<Results> results;
 	vector<std::string> filepaths;
 	int last_selected_result;
+
+	// for retraining
+	std::map<string, Results> negative;
+	std::map<string, Results> positive;
 
 	qt_test(QWidget *parent = 0);
 	~qt_test();
 	bool loadFile(const QString &fileName, Results* res);
+	void DrawRect(cv::Rect rect, int class_, QColor* color);
+	void DrawRects(Results* res);
 	void scaleImage(double factor);
 	void adjustScrollBar(QScrollBar *scrollBar, double factor);
-
+	void GetSelectedImageResult(string& img_name, int& img_index, int& res_index);
+	void GetSelectedImageResult(int& img_index, int& res_index);
+	void GetSelectedImageResult(int& img_index);
 private:
 	Ui::qt_testClass ui;
 	double scaleFactor;
 	void DisplayPositiveFiles();
 	void LoadRectsFromBWMasks();
+	void AddPositiveRectToTree(QTreeWidgetItem* node, cv::Rect* rect, int class_);
+	void AddPositiveFile(QString filename);
+	void AddPositiveFile(string filename);
 public slots:
 	void on_actionOpen_triggered();
 	void on_actionLoad_config_file_triggered();
 	void on_actionTrain_triggered();
+	void on_actionLoad_test_images_triggered();
 	void on_actionShow_leaves_triggered();
 	void on_actionDetect_triggered();
 	void on_actionZoom_in_2_triggered();
@@ -46,6 +58,7 @@ public slots:
 	void on_actionTest_local_max_triggered();
 	void on_actionMean_shift_triggered();
 	void on_btnAddPositive_clicked();
+	void on_btnAddNegative_clicked();
 	void on_treeResults_clicked();
 	
 };

@@ -1,11 +1,9 @@
+#pragma once
 #include "StdAfx.h"
 
 #ifndef MOUSELABEL_H
 #define MOUSELABEL_H
 
-#include <QPoint>
-#include <QMouseEvent>
-#include <QRubberBand>
 
 class MouseLabel : public QLabel
 {
@@ -24,7 +22,6 @@ signals:
 	void MousePressed();
 	void MouseMoved();
 	void MouseReleased();
-	void Left();
 
 public slots:
 

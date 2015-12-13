@@ -44,6 +44,8 @@
 #include <QTreeWidgetItem>
 #include <QTreeWidget>
 #include <QPainter>
+#include <QPoint>
+#include <QRubberBand>
 
 #include <miscellaneous.h>
 // TODO: Установите здесь ссылки на дополнительные заголовки, требующиеся для программы
