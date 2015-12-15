@@ -30,7 +30,7 @@ public:
 	unsigned int samples_neg; // Samples from pos. examples
 	unsigned int binary_tests_iterations;
 	string classmap_file;
-	int num_of_classes; //number of classes
+	
 	vector<string> classes; //class names
 	vector<int> width_aver; // average width of training images for each class
 	vector<int> height_min; // minimum height detected on training images for each class
@@ -50,7 +50,7 @@ public:
 	void run_detect(bool& load_forest, map<string, Results>& results);
 	void run_detect(bool& load_forest, string filename, Results& results);
 	void extract_Patches(CRPatch& Train, CvRNG* pRNG);
-	void detect(CRForestDetector& crDetect, vector<std::string> filenames, vector<Results>& results);
+	void detect(CRForestDetector& crDetect, string filename, Results& results);
 	void show();
 	void loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox);
 	void loadTrainPosFile(std::vector<string>& vFilenames, 

@@ -61,7 +61,7 @@ inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar** p
 inline void CRForest::trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples, const char* filename, unsigned int offset) {
 	char buffer[200];
 	for(int i=0; i < (int)vTrees.size(); ++i) {
-		vTrees[i] = new CRTree(min_s, max_d, TrData.vLPatches.size()-1, pRNG);
+		vTrees[i] = new CRTree(min_s, max_d, pRNG);
 		vTrees[i]->growTree(TrData, samples);
 
 		//and save

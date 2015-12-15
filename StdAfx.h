@@ -47,5 +47,10 @@
 #include <QPoint>
 #include <QRubberBand>
 
+extern int num_of_classes; //number of classes
+#define GREEN QColor("darkGreen")
+#define RED QColor("red")
+#define VIOLET QColor("violet")
+
 #include <miscellaneous.h>
 // TODO: Установите здесь ссылки на дополнительные заголовки, требующиеся для программы

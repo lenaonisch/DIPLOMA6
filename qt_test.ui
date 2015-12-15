@@ -13,6 +13,13 @@
   <property name="windowTitle">
    <string>qt_test</string>
   </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>GeneratedFiles/icon.bmp</normaloff>GeneratedFiles/icon.bmp</iconset>
+  </property>
+  <property name="toolTip">
+   <string>Delete single item</string>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
@@ -57,19 +64,49 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="toolTip">
+              <string>Add positive example</string>
+             </property>
              <property name="text">
-              <string>+</string>
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>GeneratedFiles/plus.png</normaloff>GeneratedFiles/plus.png</iconset>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="btnMarkNegative">
+            <widget class="QPushButton" name="btnAddNegative">
+             <property name="toolTip">
+              <string>Add negative example</string>
+             </property>
              <property name="text">
-              <string>-</string>
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>GeneratedFiles/minus.png</normaloff>GeneratedFiles/minus.png</iconset>
              </property>
             </widget>
            </item>
           </layout>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="MouseLabel" name="lblInput">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
         <item row="1" column="0">
@@ -98,40 +135,6 @@
           </widget>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="MouseLabel" name="lblInput">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Ignored" vsizetype="Ignored">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="scaledContents">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="3">
-         <widget class="QTreeWidget" name="treeNegative">
-          <property name="uniformRowHeights">
-           <bool>true</bool>
-          </property>
-          <property name="headerHidden">
-           <bool>true</bool>
-          </property>
-          <attribute name="headerVisible">
-           <bool>false</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string notr="true">1</string>
-           </property>
-          </column>
-         </widget>
-        </item>
         <item row="1" column="2">
          <widget class="QTreeWidget" name="treeResults">
           <property name="uniformRowHeights">
@@ -148,17 +151,51 @@
          </widget>
         </item>
         <item row="0" column="2">
-         <widget class="QLabel" name="lblPositive">
-          <property name="text">
-           <string>Positive</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="3">
-         <widget class="QLabel" name="lblNegative">
-          <property name="text">
-           <string>Negative</string>
-          </property>
+         <widget class="QWidget" name="widget_2" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QPushButton" name="btnRefresh">
+             <property name="toolTip">
+              <string>Reload all</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>GeneratedFiles/refresh.png</normaloff>GeneratedFiles/refresh.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnRemove">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>GeneratedFiles/delete.png</normaloff>GeneratedFiles/delete.png</iconset>
+             </property>
+             <property name="shortcut">
+              <string>Ctrl+D</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnDropAllResults">
+             <property name="toolTip">
+              <string>Delete all results</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>GeneratedFiles/bin.png</normaloff>GeneratedFiles/bin.png</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
        </layout>
@@ -282,6 +319,10 @@
    </attribute>
   </widget>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset>
+     <normaloff>GeneratedFiles/open.png</normaloff>GeneratedFiles/open.png</iconset>
+   </property>
    <property name="text">
     <string>Open</string>
    </property>

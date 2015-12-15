@@ -18,19 +18,18 @@ public:
 	GALL_app gall_forest_app;
 	cv::Mat currentImage;
 	bool have_forest;
-	bool single_image_selected;
+	//bool single_image_selected;
 
 	vector<std::string> filepaths;
 	int last_selected_result;
 
 	// for retraining
-	std::map<string, Results> negative;
 	std::map<string, Results> positive;
 
 	qt_test(QWidget *parent = 0);
 	~qt_test();
 	bool loadFile(const QString &fileName, Results* res);
-	void DrawRect(cv::Rect rect, int class_, QColor* color);
+	void DrawRect(cv::Rect rect, int class_, QColor color);
 	void DrawRects(Results* res);
 	void scaleImage(double factor);
 	void adjustScrollBar(QScrollBar *scrollBar, double factor);
@@ -45,6 +44,7 @@ private:
 	void AddPositiveRectToTree(QTreeWidgetItem* node, cv::Rect* rect, int class_);
 	void AddPositiveFile(QString filename);
 	void AddPositiveFile(string filename);
+	
 public slots:
 	void on_actionOpen_triggered();
 	void on_actionLoad_config_file_triggered();
@@ -59,6 +59,9 @@ public slots:
 	void on_actionMean_shift_triggered();
 	void on_btnAddPositive_clicked();
 	void on_btnAddNegative_clicked();
+	void on_btnRefresh_clicked();
+	void on_btnDropAllResults_clicked();
+	void on_btnRemove_clicked();
 	void on_treeResults_clicked();
 	
 };

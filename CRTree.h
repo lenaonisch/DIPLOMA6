@@ -39,7 +39,7 @@ public:
 	// Constructors
 	CRTree(const char* filename);
 	// cp - number of classes!!!
-	CRTree(int min_s, int max_d, int class_num, CvRNG* pRNG) : min_samples(min_s), max_depth(max_d), num_leaf(0), num_classes(class_num), cvRNG(pRNG){
+	CRTree(int min_s, int max_d, CvRNG* pRNG) : min_samples(min_s), max_depth(max_d), num_leaf(0), cvRNG(pRNG){
 		num_nodes = (int)pow(2.0,int(max_depth+1))-1;
 		// num_nodes x 7 matrix as vector
 		treetable = new int[num_nodes * 7];
@@ -61,7 +61,6 @@ public:
 		max_depth = right.max_depth;
 		num_nodes = right.num_nodes;
 		num_leaf = right.num_leaf;
-		num_classes = right.num_classes;
 		patch_size = right.patch_size;
 		channels = right.channels;
 		leaf = right.leaf;
@@ -73,7 +72,7 @@ public:
 
 	// Set/Get functions
 	unsigned int GetDepth() const {return max_depth;}
-	unsigned int GetNumClasses() const {return num_classes;}
+	unsigned int GetNumClasses() const {return num_of_classes;}
 
 	// Regression
 	const LeafNode* regression(uchar** ptFCh, int stepImg) const;
@@ -106,7 +105,7 @@ private:
 	double distMean(const vector<vector<const PatchFeature*>>& SetA, const vector<vector<const PatchFeature*>>& SetB)
 	{
 		double sum = 0;
-		for (int i = 0; i < num_classes; i++)
+		for (int i = 0; i < num_of_classes; i++)
 		{
 			sum += distMean(SetA[i],SetB[i]);
 		}
@@ -135,9 +134,6 @@ private:
 
 	// number of leafs
 	unsigned int num_leaf;
-
-	// number of classes
-	unsigned int num_classes; // == class_number.
 
 	cv::Size patch_size;
 	unsigned int channels; // 32

@@ -17,7 +17,7 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	CRPatch::extractFeatureChannels(img, vImg);
 
 	// reset output image
-	for(int c=0; c < class_count; ++c)
+	for(int c=0; c < num_of_classes; ++c)
 	{
 		imgDetect[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC1); // CV_32FC1 !!
 		ratios[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC2);
@@ -35,9 +35,9 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	// get pointer to output image
 	int stepDet;
 	int stepRatio;
-	float** ptDet = new float*[class_count];
-	float** ptRatio = new float*[class_count];
-	for(unsigned int c=0; c < class_count; ++c)
+	float** ptDet = new float*[num_of_classes];
+	float** ptRatio = new float*[num_of_classes];
+	for(unsigned int c=0; c < num_of_classes; ++c)
 	{
 		ptDet[c] = (float*)imgDetect[c].data;
 		ptRatio[c] = (float*)ratios[c].data;
@@ -68,7 +68,7 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 			for(vector<const LeafNode*>::const_iterator itL = result.begin(); itL!=result.end(); ++itL)
 			{
 
-				for (int c = 0; c < class_count; c++)
+				for (int c = 0; c < num_of_classes; c++)
 				{
 
 				// To speed up the voting, one can vote only for patches 
@@ -144,9 +144,9 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 		for(int i=0; i < scales.size(); i++) 
 		{
 			// mats for classes and [i] scale
-			vector<cv::Mat> tmps(class_count);
-			vImgDetect[i].resize(class_count);
-			for(unsigned int c = 0; c < class_count; c++)
+			vector<cv::Mat> tmps(num_of_classes);
+			vImgDetect[i].resize(num_of_classes);
+			for(unsigned int c = 0; c < num_of_classes; c++)
 			{
 				tmps[c].create ( cvSize(int(img.cols*scales[i]+0.5),int(img.rows*scales[i]+0.5)), CV_32FC1 );
 			}
@@ -154,20 +154,20 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			cv::Mat cLevel (tmps[0].rows, tmps[0].cols, CV_8UC3);				
 			cv::resize( img, cLevel, cv::Size(tmps[0].cols, tmps[0].rows));//CV_INTER_LINEAR is default
 			
-			vector<cv::Mat> ratios(class_count);
+			vector<cv::Mat> ratios(num_of_classes);
 
 			// detection
 			detectColor(cLevel, tmps, ratios);
 
 			int treshold = 150;
 			
-			for (int c = 0; c < class_count; c++) {
+			for (int c = 0; c < num_of_classes; c++) {
 				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
 				//int t = maxUsedValInHistogramData(vImgDetect[i][c]);
 				//if (t>treshold) treshold = t; 
 				tmps[c].release();
 			}
-			for (int c = 0; c < class_count; c++)
+			for (int c = 0; c < num_of_classes; c++)
 				localMaxima(vImgDetect[i][c], cv::Size(width_aver[c]*scales[i], height_min[c]*scales[i]), maxs, c, treshold);
 
 			for (int k = maxs.size()-1; k>=max_index;k--)

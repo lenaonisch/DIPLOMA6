@@ -60,14 +60,16 @@ public:
     QHBoxLayout *horizontalLayout;
     QComboBox *lstClasses;
     QPushButton *btnAddPositive;
-    QPushButton *btnMarkNegative;
+    QPushButton *btnAddNegative;
+    MouseLabel *lblInput;
     QScrollArea *scrollAreaInput;
     QWidget *scrollAreaWidgetContents_2;
-    MouseLabel *lblInput;
-    QTreeWidget *treeNegative;
     QTreeWidget *treeResults;
-    QLabel *lblPositive;
-    QLabel *lblNegative;
+    QWidget *widget_2;
+    QHBoxLayout *horizontalLayout_3;
+    QPushButton *btnRefresh;
+    QPushButton *btnRemove;
+    QPushButton *btnDropAllResults;
     QWidget *tab_2;
     QPlainTextEdit *plainTextEdit_Console;
     QLineEdit *lineEditSquire;
@@ -85,8 +87,14 @@ public:
         if (qt_testClass->objectName().isEmpty())
             qt_testClass->setObjectName(QStringLiteral("qt_testClass"));
         qt_testClass->resize(605, 440);
+        QIcon icon;
+        icon.addFile(QStringLiteral("GeneratedFiles/icon.bmp"), QSize(), QIcon::Normal, QIcon::Off);
+        qt_testClass->setWindowIcon(icon);
         actionOpen = new QAction(qt_testClass);
         actionOpen->setObjectName(QStringLiteral("actionOpen"));
+        QIcon icon1;
+        icon1.addFile(QStringLiteral("GeneratedFiles/open.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionOpen->setIcon(icon1);
         actionLoad_config = new QAction(qt_testClass);
         actionLoad_config->setObjectName(QStringLiteral("actionLoad_config"));
         actionTrain = new QAction(qt_testClass);
@@ -163,16 +171,33 @@ public:
         sizePolicy1.setVerticalStretch(0);
         sizePolicy1.setHeightForWidth(btnAddPositive->sizePolicy().hasHeightForWidth());
         btnAddPositive->setSizePolicy(sizePolicy1);
+        QIcon icon2;
+        icon2.addFile(QStringLiteral("GeneratedFiles/plus.png"), QSize(), QIcon::Normal, QIcon::Off);
+        btnAddPositive->setIcon(icon2);
 
         horizontalLayout->addWidget(btnAddPositive);
 
-        btnMarkNegative = new QPushButton(widget);
-        btnMarkNegative->setObjectName(QStringLiteral("btnMarkNegative"));
+        btnAddNegative = new QPushButton(widget);
+        btnAddNegative->setObjectName(QStringLiteral("btnAddNegative"));
+        QIcon icon3;
+        icon3.addFile(QStringLiteral("GeneratedFiles/minus.png"), QSize(), QIcon::Normal, QIcon::Off);
+        btnAddNegative->setIcon(icon3);
 
-        horizontalLayout->addWidget(btnMarkNegative);
+        horizontalLayout->addWidget(btnAddNegative);
 
 
         gridLayout->addWidget(widget, 0, 0, 1, 1);
+
+        lblInput = new MouseLabel(tab);
+        lblInput->setObjectName(QStringLiteral("lblInput"));
+        QSizePolicy sizePolicy2(QSizePolicy::Ignored, QSizePolicy::Ignored);
+        sizePolicy2.setHorizontalStretch(0);
+        sizePolicy2.setVerticalStretch(0);
+        sizePolicy2.setHeightForWidth(lblInput->sizePolicy().hasHeightForWidth());
+        lblInput->setSizePolicy(sizePolicy2);
+        lblInput->setScaledContents(true);
+
+        gridLayout->addWidget(lblInput, 1, 1, 1, 1);
 
         scrollAreaInput = new QScrollArea(tab);
         scrollAreaInput->setObjectName(QStringLiteral("scrollAreaInput"));
@@ -187,47 +212,48 @@ public:
 
         gridLayout->addWidget(scrollAreaInput, 1, 0, 1, 1);
 
-        lblInput = new MouseLabel(tab);
-        lblInput->setObjectName(QStringLiteral("lblInput"));
-        QSizePolicy sizePolicy2(QSizePolicy::Ignored, QSizePolicy::Ignored);
-        sizePolicy2.setHorizontalStretch(0);
-        sizePolicy2.setVerticalStretch(0);
-        sizePolicy2.setHeightForWidth(lblInput->sizePolicy().hasHeightForWidth());
-        lblInput->setSizePolicy(sizePolicy2);
-        lblInput->setScaledContents(true);
-
-        gridLayout->addWidget(lblInput, 1, 1, 1, 1);
-
-        treeNegative = new QTreeWidget(tab);
+        treeResults = new QTreeWidget(tab);
         QTreeWidgetItem *__qtreewidgetitem = new QTreeWidgetItem();
         __qtreewidgetitem->setText(0, QStringLiteral("1"));
-        treeNegative->setHeaderItem(__qtreewidgetitem);
-        treeNegative->setObjectName(QStringLiteral("treeNegative"));
-        treeNegative->setUniformRowHeights(true);
-        treeNegative->setHeaderHidden(true);
-        treeNegative->header()->setVisible(false);
-
-        gridLayout->addWidget(treeNegative, 1, 3, 1, 1);
-
-        treeResults = new QTreeWidget(tab);
-        QTreeWidgetItem *__qtreewidgetitem1 = new QTreeWidgetItem();
-        __qtreewidgetitem1->setText(0, QStringLiteral("1"));
-        treeResults->setHeaderItem(__qtreewidgetitem1);
+        treeResults->setHeaderItem(__qtreewidgetitem);
         treeResults->setObjectName(QStringLiteral("treeResults"));
         treeResults->setUniformRowHeights(true);
         treeResults->setHeaderHidden(true);
 
         gridLayout->addWidget(treeResults, 1, 2, 1, 1);
 
-        lblPositive = new QLabel(tab);
-        lblPositive->setObjectName(QStringLiteral("lblPositive"));
+        widget_2 = new QWidget(tab);
+        widget_2->setObjectName(QStringLiteral("widget_2"));
+        horizontalLayout_3 = new QHBoxLayout(widget_2);
+        horizontalLayout_3->setSpacing(6);
+        horizontalLayout_3->setContentsMargins(11, 11, 11, 11);
+        horizontalLayout_3->setObjectName(QStringLiteral("horizontalLayout_3"));
+        btnRefresh = new QPushButton(widget_2);
+        btnRefresh->setObjectName(QStringLiteral("btnRefresh"));
+        QIcon icon4;
+        icon4.addFile(QStringLiteral("GeneratedFiles/refresh.png"), QSize(), QIcon::Normal, QIcon::Off);
+        btnRefresh->setIcon(icon4);
 
-        gridLayout->addWidget(lblPositive, 0, 2, 1, 1);
+        horizontalLayout_3->addWidget(btnRefresh);
 
-        lblNegative = new QLabel(tab);
-        lblNegative->setObjectName(QStringLiteral("lblNegative"));
+        btnRemove = new QPushButton(widget_2);
+        btnRemove->setObjectName(QStringLiteral("btnRemove"));
+        QIcon icon5;
+        icon5.addFile(QStringLiteral("GeneratedFiles/delete.png"), QSize(), QIcon::Normal, QIcon::Off);
+        btnRemove->setIcon(icon5);
 
-        gridLayout->addWidget(lblNegative, 0, 3, 1, 1);
+        horizontalLayout_3->addWidget(btnRemove);
+
+        btnDropAllResults = new QPushButton(widget_2);
+        btnDropAllResults->setObjectName(QStringLiteral("btnDropAllResults"));
+        QIcon icon6;
+        icon6.addFile(QStringLiteral("GeneratedFiles/bin.png"), QSize(), QIcon::Normal, QIcon::Off);
+        btnDropAllResults->setIcon(icon6);
+
+        horizontalLayout_3->addWidget(btnDropAllResults);
+
+
+        gridLayout->addWidget(widget_2, 0, 2, 1, 1);
 
         tabWidget->addTab(tab, QString());
         tab_2 = new QWidget();
@@ -292,6 +318,9 @@ public:
     void retranslateUi(QMainWindow *qt_testClass)
     {
         qt_testClass->setWindowTitle(QApplication::translate("qt_testClass", "qt_test", 0));
+#ifndef QT_NO_TOOLTIP
+        qt_testClass->setToolTip(QApplication::translate("qt_testClass", "Delete single item", 0));
+#endif // QT_NO_TOOLTIP
         actionOpen->setText(QApplication::translate("qt_testClass", "Open", 0));
         actionOpen->setShortcut(QApplication::translate("qt_testClass", "Ctrl+O", 0));
         actionLoad_config->setText(QApplication::translate("qt_testClass", "Load config", 0));
@@ -310,11 +339,25 @@ public:
         actionTest_local_max->setText(QApplication::translate("qt_testClass", "test local max", 0));
         actionMean_shift->setText(QApplication::translate("qt_testClass", "mean shift", 0));
         actionLoad_test_images->setText(QApplication::translate("qt_testClass", "Load test images", 0));
-        btnAddPositive->setText(QApplication::translate("qt_testClass", "+", 0));
-        btnMarkNegative->setText(QApplication::translate("qt_testClass", "-", 0));
+#ifndef QT_NO_TOOLTIP
+        btnAddPositive->setToolTip(QApplication::translate("qt_testClass", "Add positive example", 0));
+#endif // QT_NO_TOOLTIP
+        btnAddPositive->setText(QString());
+#ifndef QT_NO_TOOLTIP
+        btnAddNegative->setToolTip(QApplication::translate("qt_testClass", "Add negative example", 0));
+#endif // QT_NO_TOOLTIP
+        btnAddNegative->setText(QString());
         lblInput->setText(QString());
-        lblPositive->setText(QApplication::translate("qt_testClass", "Positive", 0));
-        lblNegative->setText(QApplication::translate("qt_testClass", "Negative", 0));
+#ifndef QT_NO_TOOLTIP
+        btnRefresh->setToolTip(QApplication::translate("qt_testClass", "Reload all", 0));
+#endif // QT_NO_TOOLTIP
+        btnRefresh->setText(QString());
+        btnRemove->setText(QString());
+        btnRemove->setShortcut(QApplication::translate("qt_testClass", "Ctrl+D", 0));
+#ifndef QT_NO_TOOLTIP
+        btnDropAllResults->setToolTip(QApplication::translate("qt_testClass", "Delete all results", 0));
+#endif // QT_NO_TOOLTIP
+        btnDropAllResults->setText(QString());
         tabWidget->setTabText(tabWidget->indexOf(tab), QApplication::translate("qt_testClass", "General", 0));
         lineEditSquire->setText(QApplication::translate("qt_testClass", "11", 0));
         lineEditThreshold->setText(QApplication::translate("qt_testClass", "50", 0));

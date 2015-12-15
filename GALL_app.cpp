@@ -4,6 +4,8 @@
 #include "CRForestDetector.h"
 #include <QTime>
 
+int num_of_classes; //number of classes
+
 #define PATH_SEP "/"
 using namespace std;
 
@@ -190,17 +192,10 @@ void GALL_app::run_detect(bool& load_forest, map<string, Results>& results) {
 	}
 
 	// run detector
-	// Load image names
-	vector<string> filenames;
 	for(map<string, Results>::iterator it = results.begin(); it != results.end(); ++it) {
 		if (!it->second.processed)
-			filenames.push_back(it->first);
+			detect(crDetect, it->first, it->second);
 	}
-
-	vector<Results> res;
-	detect(crDetect, filenames, res);
-	for (int i = 0; i < filenames.size(); i++)
-		results[filenames[i]] = res[i];
 }
 
 // Init and start detector
@@ -212,13 +207,7 @@ void GALL_app::run_detect(bool& load_forest, string filename, Results& results) 
 	}
 
 	// run detector
-	// Load image names
-	vector<string> filenames;
-	filenames.push_back(filename);
-	vector<Results> res;
-	res.push_back(results);
-	detect(crDetect,  filenames, res);
-	results = res[0];
+	detect(crDetect,  filename, results);
 }
 
 void GALL_app::loadForest()
@@ -232,7 +221,7 @@ void GALL_app::loadForest()
 	crForest.loadForest(fpath.c_str());	
 
 	// Init detector
-	crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), num_of_classes,/*&width_aver, &height_min,*/ out_scale, (configpath + treepath + "forest_detector.txt").c_str());
+	crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), out_scale, (configpath + treepath + "forest_detector.txt").c_str());
 	//crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
 
 	// create directory for output
@@ -407,49 +396,42 @@ void GALL_app::show() {
 }
 
 // Run detector
-void GALL_app::detect(CRForestDetector& crDetect, vector<string> filenames, vector<Results>& results) {
+void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& results) {
 				
 	char buffer[200];
-	results.resize(filenames.size());
 
-	// Run detector for each image
-	for (int i = 0; i<filenames.size(); i++)
-	{
-		// Storage for output
-		vector<vector<cv::Mat> > vImgDetect(scales.size());	
-		// Load image
-		cv::Mat img;
-		img = cv::imread(filenames[i].c_str(),CV_LOAD_IMAGE_COLOR);
-		string short_name = getFilename(filenames[i]);
-		if(!img.data) {
-			string s ("Could not load image file: " + filenames[i]);
-			throw  string_exception(s);
-		}
-
-		// Detection for all scales and classes
-		crDetect.detectPyramid(img, scales, vImgDetect, results[i]);
-		results[i].processed = true;
-		filenames[i] = short_name;
-
-		// Store result
-		for(unsigned int k = 0; k < vImgDetect.size(); k++) {
-			for(unsigned int c = 0; c < vImgDetect[k].size(); ++c) {
-				
-				//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
-				// int k - scale, c - index of class
-				sprintf_s(buffer,"%s/%s_scale%d_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, short_name.c_str());
-				imwrite( buffer, vImgDetect[k][c] );
-
-				vImgDetect[k][c].release();
-				
-			}
-		}
-
-		// Release image
-		img.release();
-
+	// Storage for output
+	vector<vector<cv::Mat> > vImgDetect(scales.size());	
+	// Load image
+	cv::Mat img;
+	img = cv::imread(filename.c_str(),CV_LOAD_IMAGE_COLOR);
+	string short_name = getFilename(filename);
+	if(!img.data) {
+		string s ("Could not load image file: " + filename);
+		throw  string_exception(s);
 	}
-	//outputFile.close();
+
+	// Detection for all scales and classes
+	crDetect.detectPyramid(img, scales, vImgDetect, results);
+	results.processed = true;
+	filename = short_name;
+
+	// Store result
+	for(unsigned int k = 0; k < vImgDetect.size(); k++) {
+		for(unsigned int c = 0; c < vImgDetect[k].size(); ++c) {
+				
+			//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
+			// int k - scale, c - index of class
+			sprintf_s(buffer,"%s/%s_scale%d_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, short_name.c_str());
+			imwrite( buffer, vImgDetect[k][c] );
+
+			vImgDetect[k][c].release();
+				
+		}
+	}
+
+	// Release image
+	img.release();
 }
 
 // Extract patches from training data

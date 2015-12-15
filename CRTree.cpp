@@ -18,7 +18,7 @@ CRTree::CRTree(const char* filename) {
 	FILE * pFile = fopen (filename,"r");
 	if (pFile != NULL)
 	{
-		fscanf (pFile, "%i %i %i", &max_depth, &num_leaf, &num_classes);
+		fscanf (pFile, "%i %i %i", &max_depth, &num_leaf, &num_of_classes);
 	
 		num_nodes = (int)pow(2.0,int(max_depth+1))-1;
 		// num_nodes x 7 matrix as vector
@@ -42,15 +42,15 @@ CRTree::CRTree(const char* filename) {
 		for(unsigned int l=0; l<num_leaf; l++, ++ptLN) 
 		{
 			fscanf (pFile, "%i", &dummy); // sequence number 
-			ptLN->pfg.resize(num_classes);
-			ptLN->vCenter.resize(num_classes);
-			ptLN->vRatio.resize(num_classes);
-			for (int p = 0; p < num_classes; p++){ //  probabilities
+			ptLN->pfg.resize(num_of_classes);
+			ptLN->vCenter.resize(num_of_classes);
+			ptLN->vRatio.resize(num_of_classes);
+			for (int p = 0; p < num_of_classes; p++){ //  probabilities
 				fscanf (pFile, "%f %f",  &ptLN->pfg[p], &ptLN->vRatio[p]);
 			}
 				
 			// read centers and rectangle's sizes. For each patch there are 4 numbers!
-			for (int p = 0; p < num_classes; p++)
+			for (int p = 0; p < num_of_classes; p++)
 			{
 				fscanf (pFile, " %c %i",  &symbol, &dummy); // "|" symbol, number of patches
 				ptLN->vCenter[p].resize(dummy);
@@ -80,7 +80,7 @@ bool CRTree::saveTree(const char* filename) const {
 	ofstream out(filename);
 	if(out.is_open()) {
 
-		out << max_depth << " " << num_leaf << " " << num_classes << endl;
+		out << max_depth << " " << num_leaf << " " << num_of_classes << endl;
 
 		// save tree nodes
 		int* ptT = &treetable[0];
@@ -107,11 +107,11 @@ bool CRTree::saveTree(const char* filename) const {
 		{
 			out << l << " ";
 			// write probabilities
-			for (int p = 0; p<num_classes; p++)
+			for (int p = 0; p < num_of_classes; p++)
 				out << ptLN->pfg[p] << " " << ptLN->vRatio[p]<< " ";
 
 			// write centers and rectangle's sizes. For each patch there are 4 numbers!
-			for (int p = 0; p<num_classes; p++)
+			for (int p = 0; p < num_of_classes; p++)
 			{
 				out <<  "| " << ptLN->vCenter[p].size() << " ";
 				
@@ -141,7 +141,7 @@ void CRTree::growTree(const CRPatch& TrData, int samples) {
 	patch_size.width = TrData.vLPatches[0][0].vPatch[0].cols;
 	channels = TrData.vLPatches[0][0].vPatch.size();
 
-	vector<float> vRatio(num_classes+1);
+	vector<float> vRatio(num_of_classes+1);
 	vRatio[0] = 1;
 	vector<vector<const PatchFeature*> > TrainSet( TrData.vLPatches.size() );
 	float n0 = TrData.vLPatches[0].size();
@@ -166,7 +166,7 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 {
 	int number_of_patches = 0;
 	int class_left = 0;
-	for (int i = 0; i <= num_classes ; i++)
+	for (int i = 0; i <= num_of_classes ; i++)
 	{
 		if (TrainSet[i].size() > 0)
 		{
@@ -182,7 +182,7 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 
 		// Set measure mode for split: 0 - classification, 1 - regression
 		unsigned int measure_mode = 1;
-		if( float(TrainSet[num_classes].size()) / float(number_of_patches) > 0.05 
+		if( float(TrainSet[num_of_classes].size()) / float(number_of_patches) > 0.05 
 						&& depth < max_depth-2 )
 			measure_mode = cvRandInt( cvRNG ) % 2;
 	
@@ -239,17 +239,17 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 	LeafNode* ptL = &leaf[num_leaf];
 
 	// Store data
-	vector<float> scaled_pb(num_classes, 0);
-	ptL->pfg.resize(num_classes, 0);
-	ptL->vCenter.resize(num_classes);
-	ptL->vRatio.resize(num_classes);
+	vector<float> scaled_pb(num_of_classes, 0);
+	ptL->pfg.resize(num_of_classes, 0);
+	ptL->vCenter.resize(num_of_classes);
+	ptL->vRatio.resize(num_of_classes);
 	float sum = 0;
-	for (int i = 0; i < num_classes; i++)
+	for (int i = 0; i < num_of_classes; i++)
 	{
 		scaled_pb[i] = TrainSet[i].size()/vRatio[i];
 		sum += scaled_pb[i];
 	}
-	for (int i = 0; i < num_classes; i++)
+	for (int i = 0; i < num_of_classes; i++)
 	{
 		if (sum != 0)
 			ptL->pfg[i] = scaled_pb[i] / sum;
@@ -328,7 +328,7 @@ bool CRTree::optimizeTest  (vector<vector<const PatchFeature*> >& SetA,
 
 				// Do not allow empty set split (all patches end up in set A or B)
 				int ACount = 0, BCount = 0;
-				for (int z = 0; z <= num_classes; z++)
+				for (int z = 0; z <= num_of_classes; z++)
 				{
 					ACount += tmpA[z].size();
 					BCount += tmpB[z].size();

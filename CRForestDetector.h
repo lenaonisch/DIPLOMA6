@@ -11,10 +11,9 @@
 class CRForestDetector {
 public:
 	// Constructor
-	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, int _class_count, /*vector<int>* aver_width, vector<int>* _height_min,*/ int _out_scale, const char* filename) : 
+	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, int _out_scale, const char* filename) : 
 				crForest(pRF), width(w), height(h), prob_threshold(prob_t)
 	{
-		class_count = _class_count;
 		//width_aver = *aver_width; // will be read from file
 		//height_min = *_height_min;
 		out_scale = _out_scale;
@@ -25,7 +24,6 @@ public:
 	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, vector<int>* aver_width, vector<int>* _height_min, int _out_scale) : 
 				crForest(pRF), width(w), height(h), prob_threshold(prob_t)
 	{
-		class_count = aver_width->size();
 		width_aver = *aver_width;
 		height_min = *_height_min;
 		out_scale = _out_scale;
@@ -44,7 +42,6 @@ public:
 		prob_threshold = right.prob_threshold;
 		width_aver = right.width_aver;
 		height_min = right.height_min;
-		class_count = right.class_count;
 		out_scale = right.out_scale;
 
 		return *this;
@@ -67,11 +64,11 @@ public:
 			//out << "# Threshold to make leaf vote for particular class center" << endl;
 			out << prob_threshold << endl;
 			//out << "# Width for classes" << endl;
-			for (int i=0;i<class_count; i++)
+			for (int i=0;i<num_of_classes; i++)
 				out << width_aver[i]<<" ";
 			//out <<endl << "# height_min"<< endl;
 			out << endl;
-			for (int i=0;i<class_count; i++)
+			for (int i=0;i<num_of_classes; i++)
 				out << height_min[i]<<" ";
 		}
 	}
@@ -85,11 +82,11 @@ public:
 			fscanf (pFile, "%i %i", &width, &height);
 			//fscanf (pFile, "%i", &out_scale);
 			fscanf (pFile, "%f", &prob_threshold);
-			width_aver.resize(class_count);
-			height_min.resize(class_count);
-			for (int i=0;i<class_count; i++)
+			width_aver.resize(num_of_classes);
+			height_min.resize(num_of_classes);
+			for (int i = 0; i < num_of_classes; i++)
 				fscanf (pFile, "%i", &width_aver[i]);
-			for (int i=0;i<class_count; i++)
+			for (int i = 0; i < num_of_classes; i++)
 				fscanf (pFile, "%i", &height_min[i]);
 		}
 	}
@@ -102,6 +99,5 @@ private:
 	float prob_threshold; // leaf must have (>=prob_threshold) to be able to vote for center
 	vector<int> width_aver;
 	vector<int> height_min;
-	int class_count;
 	int out_scale;
 };

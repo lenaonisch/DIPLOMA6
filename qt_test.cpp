@@ -5,7 +5,7 @@ qt_test::qt_test(QWidget *parent)
 	: QMainWindow(parent)
 {
 	have_forest = false;
-	single_image_selected = false;
+//	single_image_selected = false;
 	last_selected_result = -1;
 	ui.setupUi(this);
 
@@ -13,7 +13,7 @@ qt_test::qt_test(QWidget *parent)
 	ui.lblInput->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 	ui.lblInput->setScaledContents(true);
 	ui.btnAddPositive->setEnabled(false);
-	ui.btnMarkNegative->setEnabled(false);
+	ui.btnAddNegative->setEnabled(false);
 
 	//ui.scrollAreaInput->setBackgroundRole(QPalette::Dark);
 	ui.scrollAreaInput->setWidget(ui.lblInput);
@@ -48,18 +48,16 @@ void qt_test::on_actionLoad_config_file_triggered()
 		ui.actionBatch_detect->setEnabled(true);
 		ui.actionTrain->setEnabled(true);
 		ui.actionLoad_test_images->setEnabled(true);
-		if (single_image_selected)
-			ui.actionDetect->setEnabled(true);
+		ui.actionDetect->setEnabled(true);
 
 		ui.btnAddPositive->setEnabled(true);
-		ui.btnMarkNegative->setEnabled(true);
+		ui.btnAddNegative->setEnabled(true);
 
 		have_forest = false;
 
 		ui.lstClasses->clear();
 		for (int i = 0; i < gall_forest_app.classes.size(); i++)
 			ui.lstClasses->addItem(QString("class %1: %2").arg(i).arg(gall_forest_app.classes[i].c_str()));
-		//gall_forest_app.show();
 	}
 	catch (exception& e)
 	{
@@ -72,7 +70,11 @@ void qt_test::on_actionLoad_config_file_triggered()
 
 void qt_test::AddPositiveRectToTree(QTreeWidgetItem* node, cv::Rect* rect, int class_)
 {
-	QString text = QString("%1: %2, %3->%4, %5").arg(gall_forest_app.classes[class_].c_str()).arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height);
+	QString text;
+	if (class_ >= num_of_classes)
+		text = QString("negative: %1, %2->%3, %4").arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height);
+	else
+		text = QString("%1: %2, %3->%4, %5").arg(gall_forest_app.classes[class_].c_str()).arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height);
 	QTreeWidgetItem* item = new QTreeWidgetItem(QStringList(text));
 	item->setToolTip(0, text);
 	node->addChild(item);
@@ -148,6 +150,16 @@ void qt_test::on_actionBatch_detect_triggered()
 	try
 	{
 		last_selected_result = -1;
+		if (filepaths.size() == 0)
+		{
+			QMessageBox msg;
+			QString str("No files loaded!");
+			msg.setText(str);
+			msg.exec();
+			return;
+		}
+		for (int i = 0; i < filepaths.size(); i++)
+			positive[filepaths[i]].processed = false;// workaroung to initialize positive variable
 		gall_forest_app.run_detect(have_forest, positive);
 		DisplayPositiveFiles();
 	}
@@ -168,7 +180,13 @@ void qt_test::on_actionDetect_triggered()
 		int img_index; //res_index not used
 		GetSelectedImageResult(img_index);
 		if (img_index < 0)
-			img_index = filepaths.size()-1;
+		{
+			QMessageBox msg;
+			QString str("No image to process!");
+			msg.setText(str);
+			msg.exec();	
+			return;
+		}
 		if (positive[filepaths[img_index]].processed)
 		{
 			QMessageBox msg;
@@ -209,8 +227,12 @@ void qt_test::on_actionOpen_triggered()
 			string str = dialog.selectedFiles().first().toStdString();
 			filepaths.push_back(str);
 			AddPositiveFile(str);
+			positive[str].processed = false; //workaround
 
-			last_selected_result = -1;
+			if (last_selected_result != -1)
+				ui.treeResults->topLevelItem(last_selected_result)->setSelected(false);
+			last_selected_result = filepaths.size()-1;
+			ui.treeResults->topLevelItem(last_selected_result)->setSelected(true);
 			if  (!gall_forest_app.configpath.empty())
 			{
 				ui.actionDetect->setEnabled(true);
@@ -252,18 +274,18 @@ bool qt_test::loadFile(const QString &fileName, Results* res)
         return false;
     }
 	
-	single_image_selected = true;
 	QPixmap pix = QPixmap::fromImage(image);
 	if (res != NULL)
 	{
 		QPainter *paint = new QPainter(&pix);
 
-		paint->setPen(*(new QColor("darkGreen")));
 		for (int i = 0; i < res->rects.size(); i++)
 		{
+			paint->setPen(res->colors[i]);
+			if (res->classes[i] < num_of_classes)
+				paint->drawText(res->rects[i].x-2, res->rects[i].y-2, QString(gall_forest_app.classes[res->classes[i]].c_str()));
 			QRect rect(res->rects[i].x, res->rects[i].y, res->rects[i].width, res->rects[i].height);
 			paint->drawRect(rect);
-			paint->drawText(res->rects[i].x-2, res->rects[i].y-2, QString(gall_forest_app.classes[res->classes[i]].c_str()));
 		}
 	}
 
@@ -275,15 +297,16 @@ bool qt_test::loadFile(const QString &fileName, Results* res)
     return true;
 }
 
-void qt_test::DrawRect(cv::Rect rect, int class_, QColor* color)
+void qt_test::DrawRect(cv::Rect rect, int class_, QColor color)
 {
 	QPixmap pixmap = *(ui.lblInput->pixmap());
 	QPainter painter(&pixmap);              
 
-	painter.setPen(*color);
+	painter.setPen(color);
 	QRect qrect(rect.x, rect.y, rect.width, rect.height);
 	painter.drawRect(qrect);
-	painter.drawText(rect.x-2, rect.y-2, QString(gall_forest_app.classes[class_].c_str()));
+	if (class_ < num_of_classes)
+		painter.drawText(rect.x-2, rect.y-2, QString(gall_forest_app.classes[class_].c_str()));
 
 	ui.lblInput->setPixmap(pixmap);     
 }
@@ -300,7 +323,8 @@ void qt_test::DrawRects(Results* res)
 			painter.setPen(res->colors[i]);
 			QRect qrect(res->rects[i].x, res->rects[i].y, res->rects[i].width, res->rects[i].height);
 			painter.drawRect(qrect);
-			painter.drawText(qrect.x()-2, qrect.y()-2, QString(gall_forest_app.classes[res->classes[i]].c_str()));
+			if (res->classes[i] < num_of_classes)
+				painter.drawText(qrect.x()-2, qrect.y()-2, QString(gall_forest_app.classes[res->classes[i]].c_str()));
 		}
 		ui.lblInput->setPixmap(pixmap); 
 	}
@@ -352,7 +376,7 @@ void qt_test::on_actionTest_local_max_triggered()
 	
 	QPainter *paint = new QPainter(pix_);
 
-	paint->setPen(*(new QColor("red")));
+	paint->setPen(RED);
 	for (int i = 0; i < locations.size(); i++)
 	{
 		paint->drawEllipse(locations[i].point.x, locations[i].point.y, 3,3);
@@ -377,11 +401,11 @@ void qt_test::on_btnAddPositive_clicked()
 		img_index = (img_index >= 0) ? img_index: filepaths.size()-1;
 		string filename_ = filepaths[img_index];
 		cv::Rect rect(lbl->x, lbl->y, lbl->dx, lbl->dy);
-		Results& res = positive[filename_];
-		res.classes.push_back(class_num);
-		res.rects.push_back(rect);
+		positive[filename_].push_back(class_num, rect, GREEN);
 		QTreeWidgetItem* treeItem = ui.treeResults->topLevelItem(img_index);
 		AddPositiveRectToTree(treeItem, &rect, class_num);
+		ui.lblInput->rubberBand->hide();
+		DrawRect(rect, class_num, GREEN);
 	}
 	else
 	{
@@ -394,17 +418,23 @@ void qt_test::on_btnAddPositive_clicked()
 
 void qt_test::on_btnAddNegative_clicked()
 { 
-	if (ui.lblInput->x > 0 && ui.lblInput->y > 0)
+	int img_index, res_index;
+	GetSelectedImageResult(img_index,res_index);
+	if (res_index < 0)
 	{
-		int img_index, 
-			res_index; 
-		GetSelectedImageResult(img_index, res_index);
-
+		QMessageBox msg;
+		QString str("Nothing selected!");
+		msg.setText(str);
+		msg.exec();	
+		return;
 	}
-	else
-	{
-
-	}
+	string filename_ = filepaths[img_index];
+	cv::Rect rect = positive[filename_].makeNegative(res_index);
+	DrawRect(rect, num_of_classes, RED);
+	QString text = QString("negative: %1, %2->%3, %4").arg(rect.x).arg(rect.y).arg(rect.width).arg(rect.height);
+	QTreeWidgetItem* item = ui.treeResults->topLevelItem(img_index)->child(res_index);
+	item->setText(0, text);
+	item->setToolTip(0, text);
 }
 
 void qt_test::on_actionMean_shift_triggered()
@@ -473,18 +503,25 @@ void qt_test::GetSelectedImageResult(string& img_name, int& img_index, int& res_
 
 void qt_test::on_treeResults_clicked()
 {
-	
 	int img_index, res_index;
 	string text;
 	GetSelectedImageResult(text, img_index, res_index);
 	if (img_index != last_selected_result)
 	{
 		last_selected_result = img_index;
-		loadFile(QString((filepaths[img_index]).c_str()), &positive[filepaths[img_index]]);
+		Results* res = &positive[filepaths[img_index]];
+		if (res->colors.size() == 0)
+			for (int i = 0; i < res->classes.size(); i++)
+				res->colors.push_back(GREEN);
+		
 		if (res_index >= 0)
 		{
-			Results res = positive[filepaths[img_index]];
-			DrawRect(res.rects[res_index], res.classes[res_index], new QColor("violet"));
+			res->colors[res_index] = VIOLET;
+		}
+		loadFile(QString((filepaths[img_index]).c_str()), res);
+		if (res_index >= 0)
+		{
+			res->colors[res_index] = GREEN;
 		}
 	}
 	else
@@ -492,8 +529,7 @@ void qt_test::on_treeResults_clicked()
 		if (res_index >= 0)
 		{
 			Results res = positive[filepaths[img_index]];
-			res.colors = vector<QColor> (res.classes.size(), QColor("darkGreen"));
-			res.colors[res_index] = QColor("violet");
+			res.markResWithColor(res_index);
 			DrawRects(&res);
 		}
 		
@@ -602,6 +638,7 @@ void qt_test::on_actionLoad_test_images_triggered()
 		}
 		else return;
 		DisplayPositiveFiles();
+
 	}
 	catch (exception& e)
 	{
@@ -609,5 +646,52 @@ void qt_test::on_actionLoad_test_images_triggered()
 		QString str(e.what());
 		msg.setText(str);
 		msg.exec();	
+	}
+}
+
+void qt_test::on_btnRefresh_clicked()
+{
+	DisplayPositiveFiles();
+}
+
+void qt_test::on_btnDropAllResults_clicked()
+{
+	for (map<string, Results>::iterator it = positive.begin(); it != positive.end(); it++)
+	{
+		it->second.clear();
+	}
+	DisplayPositiveFiles();
+	if (last_selected_result>=0 && filepaths.size() > last_selected_result)
+		loadFile(filepaths[last_selected_result].c_str(), NULL);
+}
+
+void qt_test::on_btnRemove_clicked()
+{
+	int img_index, res_index;
+	GetSelectedImageResult(img_index, res_index);
+	if (img_index < 0)
+		return;
+	if (res_index >= 0)
+	{
+		QTreeWidgetItem* rem = ui.treeResults->topLevelItem(img_index)->child(res_index);
+		ui.treeResults->topLevelItem(img_index)->removeChild(rem);
+		Results* res = &positive[filepaths[img_index]];
+		res->removeAt(res_index);
+		loadFile(QString((filepaths[img_index]).c_str()), res);
+	}
+	else
+	{
+		delete ui.treeResults->topLevelItem(img_index);
+		positive.erase(positive.find(filepaths[img_index]));
+		filepaths.erase(filepaths.begin()+img_index);
+		if (img_index == filepaths.size())	
+			img_index--;
+		if (img_index < 0)
+		{
+			ui.lblInput->setPixmap(QPixmap());
+			return;
+		}
+		ui.treeResults->topLevelItem(img_index)->setSelected(true);
+		loadFile(QString((filepaths[img_index]).c_str()), &positive[filepaths[img_index]]);
 	}
 }
