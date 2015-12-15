@@ -39,10 +39,7 @@ void qt_test::on_actionLoad_config_file_triggered()
 	{
 		gall_forest_app.loadConfig(filename/*, mode*/);
 
-		QMessageBox msg;
-		QString str("Config file has been loaded successfully!");
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage("Config file has been loaded successfully!", 1);	
 
 
 		ui.actionBatch_detect->setEnabled(true);
@@ -61,10 +58,7 @@ void qt_test::on_actionLoad_config_file_triggered()
 	}
 	catch (exception& e)
 	{
-		QMessageBox msg;
-		QString str(e.what());
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage(e.what(),2);
 	}
 }
 
@@ -122,10 +116,7 @@ void qt_test::on_actionTrain_triggered()
 	}
 	catch (exception& e)
 	{
-		QMessageBox msg;
-		QString str(e.what());
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage(e.what(), 2);
 	}
 }
 
@@ -137,10 +128,7 @@ void qt_test::on_actionShow_leaves_triggered()
 	}
 	catch (exception& e)
 	{
-		QMessageBox msg;
-		QString str(e.what());
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage(e.what(),2);
 	}
 	//ui->plainTextEdit_Console
 }
@@ -152,10 +140,7 @@ void qt_test::on_actionBatch_detect_triggered()
 		last_selected_result = -1;
 		if (filepaths.size() == 0)
 		{
-			QMessageBox msg;
-			QString str("No files loaded!");
-			msg.setText(str);
-			msg.exec();
+			ShowMessage("No files loaded!");
 			return;
 		}
 		for (int i = 0; i < filepaths.size(); i++)
@@ -165,10 +150,7 @@ void qt_test::on_actionBatch_detect_triggered()
 	}
 	catch (exception& e)
 	{
-		QMessageBox msg;
-		QString str(e.what());
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage(e.what(), 2);
 	}
 }
 
@@ -181,18 +163,12 @@ void qt_test::on_actionDetect_triggered()
 		GetSelectedImageResult(img_index);
 		if (img_index < 0)
 		{
-			QMessageBox msg;
-			QString str("No image to process!");
-			msg.setText(str);
-			msg.exec();	
+			ShowMessage("No image to process!");	
 			return;
 		}
 		if (positive[filepaths[img_index]].processed)
 		{
-			QMessageBox msg;
-			QString str("Image has been already processed!");
-			msg.setText(str);
-			msg.exec();	
+			ShowMessage("Image has been already processed!");
 			return;
 		}
 		gall_forest_app.run_detect(have_forest, filepaths[img_index], positive[filepaths[img_index]]);
@@ -200,10 +176,7 @@ void qt_test::on_actionDetect_triggered()
 	}
 	catch (exception& e)
 	{
-		QMessageBox msg;
-		QString str(e.what());
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage(e.what(),2);
 	}
 }
 
@@ -409,10 +382,7 @@ void qt_test::on_btnAddPositive_clicked()
 	}
 	else
 	{
-		QMessageBox msg;
-		QString str("Nothing selected!");
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage("Nothing selected!");	
 	}
 }
 
@@ -422,10 +392,7 @@ void qt_test::on_btnAddNegative_clicked()
 	GetSelectedImageResult(img_index,res_index);
 	if (res_index < 0)
 	{
-		QMessageBox msg;
-		QString str("Nothing selected!");
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage("Nothing selected!");
 		return;
 	}
 	string filename_ = filepaths[img_index];
@@ -642,10 +609,7 @@ void qt_test::on_actionLoad_test_images_triggered()
 	}
 	catch (exception& e)
 	{
-		QMessageBox msg;
-		QString str(e.what());
-		msg.setText(str);
-		msg.exec();	
+		ShowMessage(e.what(),2);
 	}
 }
 

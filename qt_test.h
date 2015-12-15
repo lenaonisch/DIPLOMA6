@@ -44,7 +44,22 @@ private:
 	void AddPositiveRectToTree(QTreeWidgetItem* node, cv::Rect* rect, int class_);
 	void AddPositiveFile(QString filename);
 	void AddPositiveFile(string filename);
-	
+	// type: 0 - warning, 1 - information, 2 - error
+	void ShowMessage(QString message, char type = 0)
+	{
+		switch (type)
+		{
+		case 0:
+			QMessageBox::QMessageBox("Warning!", message, QMessageBox::Icon::Warning, QMessageBox::Ok,0,0,this).exec();
+			break;
+		case 2:
+			QMessageBox::QMessageBox("Error!", message, QMessageBox::Icon::Critical, QMessageBox::Ok,0,0,this).exec();
+			break;
+		default:
+			QMessageBox::QMessageBox("Information", message, QMessageBox::Icon::Information, QMessageBox::Ok,0,0,this).exec();
+			break;
+		}
+	}
 public slots:
 	void on_actionOpen_triggered();
 	void on_actionLoad_config_file_triggered();
