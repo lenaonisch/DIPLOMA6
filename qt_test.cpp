@@ -111,8 +111,17 @@ void qt_test::on_actionTrain_triggered()
 {
 	try
 	{
-		gall_forest_app.run_train();
-		have_forest = true;
+		TrainParameters* param_form = new TrainParameters;
+		if (param_form->exec() == QDialog::Accepted)
+		{
+			gall_forest_app.binary_tests_iterations = param_form->binary_tests_iterations();
+			gall_forest_app.ntrees = param_form->trees();
+			gall_forest_app.subsamples_pos = param_form->trainPart();	
+			gall_forest_app.useAllMarkedPos = param_form->bUseAllMarkedInGUI();
+			gall_forest_app.fluctparam = param_form->bFluct();
+			gall_forest_app.run_train();
+			have_forest = true;
+		}
 	}
 	catch (exception& e)
 	{

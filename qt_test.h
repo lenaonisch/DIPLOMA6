@@ -1,6 +1,7 @@
 #pragma once
 #include "StdAfx.h"
 #include "GALL_app.h"
+#include "trainparameters.h"
 
 #ifndef QT_TEST_H
 #define QT_TEST_H

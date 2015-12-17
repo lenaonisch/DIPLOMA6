@@ -77,6 +77,12 @@
     <ClCompile Include="GeneratedFiles\Release\moc_MouseLabel.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="trainparameters.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_trainparameters.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="qt_test.h">
@@ -89,6 +95,9 @@
       <Filter>Resource Files</Filter>
     </CustomBuild>
     <CustomBuild Include="MouseLabel.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="trainparameters.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
@@ -123,5 +132,13 @@
     <ClInclude Include="miscellaneous.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_trainparameters.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="trainparameters.ui">
+      <Filter>Form Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -30,6 +30,10 @@ public:
 	unsigned int samples_neg; // Samples from pos. examples
 	unsigned int binary_tests_iterations;
 	string classmap_file;
+
+	bool* fluctparam;
+	bool useAllMarkedPos;
+
 	
 	vector<string> classes; //class names
 	vector<int> width_aver; // average width of training images for each class
