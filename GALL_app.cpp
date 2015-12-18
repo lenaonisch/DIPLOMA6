@@ -412,7 +412,7 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	}
 
 	// Detection for all scales and classes
-	crDetect.detectPyramid(img, scales, vImgDetect, results);
+	double* timers = crDetect.detectPyramid(img, scales, vImgDetect, results);
 	results.processed = true;
 	filename = short_name;
 
