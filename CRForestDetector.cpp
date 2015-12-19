@@ -11,6 +11,8 @@ using namespace std;
 // imgDetect - vector.size == num_of_classes
 void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios) {
 
+	int timer_regression = 0, timer_leaf_process = 0;
+
 	int img_width = img.rows;
 	// extract features
 	std::vector<cv::Mat> vImg;
@@ -61,10 +63,13 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 		for(x=0; x<img.cols-width; ++x, ++cx) 
 		{					
 			// regression for a single patch
+			int temp = clock();
 			vector<const LeafNode*> result;
 			crForest->regression(result, ptFCh_row, stepImg);
+			timer_regression+=(clock()-temp);
 			
 			// vote for all trees (leafs) 
+			temp = clock();
 			for(vector<const LeafNode*>::const_iterator itL = result.begin(); itL!=result.end(); ++itL)
 			{
 
@@ -96,6 +101,7 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 					//} // end if
 				}
 			}
+			timer_leaf_process+=clock()-temp;
 
 			// increase pointer - x
 			for(unsigned int c=0; c<vImg.size(); ++c)
