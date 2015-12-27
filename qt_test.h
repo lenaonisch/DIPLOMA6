@@ -2,6 +2,7 @@
 #include "StdAfx.h"
 #include "GALL_app.h"
 #include "trainparameters.h"
+#include "AMP_char.h"
 
 #ifndef QT_TEST_H
 #define QT_TEST_H
@@ -59,6 +60,60 @@ private:
 		default:
 			QMessageBox::QMessageBox("Information", message, QMessageBox::Icon::Information, QMessageBox::Ok,0,0,this).exec();
 			break;
+		}
+	}
+
+	void temp_AMP_test()
+	{
+		last_selected_result = -1;
+		int img_index; //res_index not used
+		GetSelectedImageResult(img_index);
+		///////////////////////////////
+
+		using namespace concurrency;
+		cv::Mat image = cv::imread(filepaths[img_index].c_str(),CV_LOAD_IMAGE_COLOR);
+		cv::Mat vImg(image.rows, image.cols, CV_8UC1);
+		cvtColor( image, vImg, CV_RGB2GRAY );
+		
+		int time = clock();
+
+		concurrency::extent<1> e((image.rows*image.cols+3)/4);
+		array_view<unsigned int, 1> imgView (e, reinterpret_cast<unsigned int*>(vImg.data));
+
+		int step = vImg.step1();
+
+		concurrency::extent<2> e2(image.rows, image.cols);
+		parallel_for_each(e2, [=](index<2>idx) restrict (amp)
+		{
+			unsigned int ch = read_uchar(imgView, idx, step);
+			ch/=2;
+			write_uchar(imgView, idx, step, ch);
+			//imgView[idx] *= 0.25f;
+		});
+
+		imgView.synchronize();
+		
+		time = clock() - time;
+		ShowMessage(QString("Time is %0").arg(time), 1);
+		
+		//imgView.convertTo(output, CV_8UC1);
+
+		char buffer[200];
+		sprintf_s(buffer,"%s/%s",(gall_forest_app.configpath + gall_forest_app.outpath).c_str(), "test.png");
+		imwrite( buffer, vImg );
+		
+		image.release();
+		//output.release();
+		vImg.release();
+	}
+	void temp_Count_leaves()
+	{
+		gall_forest_app.loadForest();
+		vector<int> num_of_centers (gall_forest_app.crForest.vTrees.size(),0);
+		for(int i=0; i<(int)gall_forest_app.crForest.vTrees.size(); ++i) {
+			for (int j = 0; j< gall_forest_app.crForest.vTrees[i]->num_leaf; j++)
+				for (int k = 0; k<num_of_classes; k++)
+					num_of_centers[i]+=gall_forest_app.crForest.vTrees[i]->leaf[j].vCenter[k].size();
 		}
 	}
 public slots:

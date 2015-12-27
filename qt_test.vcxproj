@@ -146,6 +146,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AMP_char.h" />
     <ClInclude Include="CRForest.h" />
     <ClInclude Include="CRForestDetector.h" />
     <ClInclude Include="CRPatch.h" />
