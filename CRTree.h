@@ -47,6 +47,8 @@ public:
 			treetable[i] = 0;
 		// allocate memory for leafs
 		leaf = new LeafNode[(int)pow(2.0,int(max_depth))];
+		center_count = 0;
+		treetable_count = 0;
 	}
 
 	CRTree(){}
@@ -76,6 +78,7 @@ public:
 
 	// Regression
 	const LeafNode* regression(uchar** ptFCh, int stepImg) const;
+	const LeafNode* regression(uchar* ptFCh, int stepImg, int channels) const;
 
 	// Training
 	void growTree(const CRPatch& TrData, int samples);
@@ -87,6 +90,15 @@ public:
 			leaf[l].show(5000, width, height);
 	}
 
+	//int* amp_treetable;
+	//unsigned int* amp_treepointer;
+	int treetable_count;
+
+	//int* amp_leafs;
+	//unsigned int* amp_leafpointer;
+	int center_count;
+
+	void ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& treepointer, cv::Mat& leafs, cv::Mat& leafpointer);
 private: 
 
 	// Private functions for training
@@ -131,7 +143,7 @@ private:
 
 	// number of nodes: 2^(max_depth+1)-1
 	unsigned int num_nodes;
-
+public:
 	// number of leafs
 	unsigned int num_leaf;
 
@@ -144,7 +156,7 @@ private:
 	CvRNG *cvRNG;
 };
 
-inline const LeafNode* CRTree::regression(uchar** ptFCh, int stepImg) const {
+inline const LeafNode* CRTree::regression(uchar** ptFCh, int stepImg) const{
 	// pointer to current node
 	const int* pnode = &treetable[0];
 	int node = 0;
@@ -166,7 +178,37 @@ inline const LeafNode* CRTree::regression(uchar** ptFCh, int stepImg) const {
 		// next node: 2*node_id + 1 + test
 		// increment node/pointer by node_id + 1 + test
 		int incr = node+1+test;
-		node += incr;
+		node += incr; //after this operation node contains node_id
+		pnode += incr*7;
+	}
+
+	// return leaf
+	return &leaf[pnode[0]];
+}
+
+inline const LeafNode* CRTree::regression(uchar* ptFCh, int stepImg, int channels) const{
+	// pointer to current node
+	const int* pnode = &treetable[0];
+	int node = 0;
+
+	// Go through tree until one arrives at a leaf, i.e. pnode[0]>=0)
+	while(pnode[0]==-1) {
+		// binary test 0 - left, 1 - right
+		// Note that x, y are changed since the patches are given as matrix and not as image 
+		// p1 - p2 < t -> left is equal to (p1 - p2 >= t) == false
+		
+		// pointer to channel
+		//uchar* ptC = ptFCh[pnode[5]];
+		// get pixel values 
+		int p1 = *(ptFCh+pnode[1]*channels+pnode[2]*stepImg+pnode[5]); //pnode[1] - x - col, pnode[2] - y - row
+		int p2 = *(ptFCh+pnode[3]*channels+pnode[4]*stepImg+pnode[5]);
+		// test
+		bool test = ( p1 - p2 ) >= pnode[6];
+
+		// next node: 2*node_id + 1 + test
+		// increment node/pointer by node_id + 1 + test
+		int incr = node+1+test;
+		node += incr; //after this operation node contains node_id
 		pnode += incr*7;
 	}
 

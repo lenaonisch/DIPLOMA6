@@ -7,6 +7,7 @@
 #include "stdafx.h"
 #include "CRForest.h"
 #include "HierarhicalThreshold.h"
+#include "AMP_char.h"
 
 class CRForestDetector {
 public:
@@ -19,6 +20,7 @@ public:
 		out_scale = _out_scale;
 
 		load(filename);
+
 	}
 
 	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, vector<int>* aver_width, vector<int>* _height_min, int _out_scale) : 
@@ -90,9 +92,15 @@ public:
 				fscanf (pFile, "%i", &height_min[i]);
 		}
 	}
+	void convertToMultiChannel(concurrency::array_view<unsigned int>& outputView, vector<cv::Mat> input);
 
+	int*** treetable;
+	unsigned int** treepointer;
+
+	float** leafs;
+	unsigned int** leafpointer;
 private:
-	void detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios);
+	void detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios);
 	const CRForest* crForest;
 	int width;
 	int height;

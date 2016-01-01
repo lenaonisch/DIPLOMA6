@@ -37,6 +37,7 @@ public:
 	
 	// Regression 
 	void regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const;
+	void regression(std::vector<const LeafNode*>& result, uchar* ptFCh, int stepImg, int channels) const;
 
 	// Training
 	void trainForest(int min_s, int max_d, CvRNG* pRNG, const CRPatch& TrData, int samples, const char* filename, unsigned int offset);
@@ -48,12 +49,34 @@ public:
 
 	// Trees
 	std::vector<CRTree*> vTrees;
+
+	cv::Mat amp_treetable; //size: num_of_trees x max.size of treetable
+	int max_treetable_len;
+	cv::Mat amp_treepointer;
+
+	cv::Mat amp_leafs;
+	cv::Mat amp_leafpointer;
+
+	//int* amp_treetable;
+	//unsigned int* amp_treepointer;
+	//int treetable_count;
+
+	//int* amp_leafs;
+	//unsigned int* amp_leafpointer;
+	//int center_count;
 };
 
-inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const {
+inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const{
 	result.resize( vTrees.size() );
 	for(int i=0; i<(int)vTrees.size(); ++i) {
 		result[i] = vTrees[i]->regression(ptFCh, stepImg);
+	}
+}
+
+inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar* ptFCh, int stepImg, int channels) const{
+	result.resize( vTrees.size() );
+	for(int i=0; i<(int)vTrees.size(); ++i) {
+		result[i] = vTrees[i]->regression(ptFCh, stepImg, channels);
 	}
 }
 

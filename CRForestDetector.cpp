@@ -9,7 +9,7 @@
 using namespace std;
 
 // imgDetect - vector.size == num_of_classes
-void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios) {
+void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios) {
 
 	int timer_regression = 0, timer_leaf_process = 0;
 
@@ -17,16 +17,50 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	// extract features
 	std::vector<cv::Mat> vImg;
 	CRPatch::extractFeatureChannels(img, vImg);
+	int rows = img.rows;
+	int cols = img.cols;
+	int sz[] = {rows,cols};
+	int channels = vImg.size();
+	
+	//output.create(rows,cols, CV_8UC(channels)); 
+	//uchar* out_ptr = output.data;
+	//concurrency::extent<1> eOut((rows*cols*channels+3)/4);
+	//array_view<unsigned int, 1> vImgView (eOut, reinterpret_cast<unsigned int*>(output.data));
+	//vImgView.discard_data();
+	//convertToMultiChannel(vImgView, vImg);
+	//for(int c = 0; c < channels; c++)
+	//{
+	//	//using namespace concurrency;
+	//
+	//	//concurrency::extent<1> eIn((rows*cols+3)/4);
+	//	//array_view<const unsigned int, 1> inputView (eIn, reinterpret_cast<unsigned int*>(vImg[c].data));	
+
+	//	//concurrency::extent<2> e(rows, cols);
+	//	int step_input = vImg[c].step1();
+	//	int step_output = output.step1();
+	//	int temp = cols*channels;
+	//	//parallel_for_each(e, [=](index<2>idx) restrict (amp)
+	//	//{
+	//	//	unsigned int ch = read_uchar(inputView, idx, step_input);
+	//	//	//write
+	//	//	int index = idx[0]*step_output+idx[1]*channels+c;
+	//	//	atomic_fetch_xor(&vImgView[index >> 2], vImgView[index >> 2] & (0xFF << ((index & 0x3) << 3)));
+	//	//	atomic_fetch_xor(&vImgView[index >> 2], (ch & 0xFF) << ((index & 0x3) << 3));
+	//	//});
+
 
 	// reset output image
-	for(int c=0; c < num_of_classes; ++c)
-	{
-		imgDetect[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC1); // CV_32FC1 !!
-		ratios[c] = cv::Mat::zeros(imgDetect[c].rows, imgDetect[c].cols, CV_32FC2);
-	}
+	imgDetect = cv::Mat::zeros(size, CV_32FC(num_of_classes)); // CV_32FC1 !!
+	int numclass2 = num_of_classes*2;
+	ratios = cv::Mat::zeros(size, CV_32FC(numclass2));
 
+/////////////must be commented
 	// get pointers to feature channels
 	int stepImg;
+	//uchar* ptFCh;
+	//uchar* ptFCh_row;
+	//ptFCh = output.data;
+	//stepImg = output.step1();
 	uchar** ptFCh     = new uchar*[vImg.size()];
 	uchar** ptFCh_row = new uchar*[vImg.size()];
 	for(unsigned int c=0; c<vImg.size(); ++c) {
@@ -37,21 +71,39 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	// get pointer to output image
 	int stepDet;
 	int stepRatio;
-	float** ptDet = new float*[num_of_classes];
-	float** ptRatio = new float*[num_of_classes];
-	for(unsigned int c=0; c < num_of_classes; ++c)
-	{
-		ptDet[c] = (float*)imgDetect[c].data;
-		ptRatio[c] = (float*)ratios[c].data;
-	}
-	stepDet = imgDetect[0].step1();
-	stepRatio = ratios[0].step1();
-
+	float* ptDet;
+	float* ptRatio;
+	/*for(unsigned int c=0; c < num_of_classes; ++c)
+	{*/
+	ptDet = (float*)imgDetect.data;
+	ptRatio = (float*)ratios.data;
+	//}
+	stepDet = imgDetect.step1();
+	stepRatio = ratios.step1();
+////////////////////////////must be commented
 	int xoffset = width/2;
 	int yoffset = height/2;
 	
 	int x, y, cx, cy; // x,y top left; cx,cy center of patch
 	cy = yoffset; 
+
+	//// output image vImgDetect
+	//concurrency::extent<3> e_ptDet(num_of_classes, size.height, size.width);
+	//array_view<const float, 3> ptDetView(e_ptDet, imgDetect.data);
+	//
+	//// output matrices ratio
+	//concurrency::extent<3> e_ptRatio(num_of_classes*2, size.height, size.width);
+	//array_view<const float, 3> ptRatioView(e_ptRatio, ratios.data);
+
+
+	//// treetable
+	//int leaflen = 100; 
+	//concurrency::extent<2> e2(crForest->vTrees.size(),  leaflen);
+	//parallel_for_each(e2, [=](index<2>idx) restrict (amp)
+	//{
+	//	leafs[idx]++;
+	//});
+
 
 	for(y=0; y<img.rows-height; ++y, ++cy) 
 	{
@@ -65,6 +117,7 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 			// regression for a single patch
 			int temp = clock();
 			vector<const LeafNode*> result;
+			//crForest->regression(result, ptFCh_row, stepImg, channels);
 			crForest->regression(result, ptFCh_row, stepImg);
 			timer_regression+=(clock()-temp);
 			
@@ -90,12 +143,13 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 						{
 							int x = int(cx - (*it).x + 0.5);
 							int y = cy-(*it).y;
-							if(y >= 0 && y < imgDetect[c].rows && x >= 0 && x<imgDetect[c].cols)
+							if(y >= 0 && y < imgDetect.rows && x >= 0 && x<imgDetect.cols)
 							{
-								*(ptDet[c]+x+y*stepDet) += w;
+								*(ptDet + y*stepDet + x*num_of_classes + c) += w;
+								// ptr[row*step + col*channels + channel] = 7;
 								//formula for pointer: *(ptM[mat_num] + row*step + col*channels_total + channel)
-								*(ptRatio[c] + y*stepRatio + x*2)+=r;
-								*(ptRatio[c] + y*stepRatio + x*2 + 1)+=1;
+								*(ptRatio + y*stepRatio + x*numclass2 + 2*c)+=r;
+								*(ptRatio + y*stepRatio + x*numclass2 + 2*c+1)+=1;
 							}
 						}
 					//} // end if
@@ -116,8 +170,7 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	} // end for y 	
 
 	// smooth result image
-	for(int c=0; c<(int)imgDetect.size(); ++c)
-		cv::GaussianBlur(imgDetect[c], imgDetect[c], cv::Size(3,3), 0);
+	cv::GaussianBlur(imgDetect, imgDetect, cv::Size(3,3), 0);
 
 	// release feature channels
 	for(unsigned int c=0; c<vImg.size(); ++c)
@@ -125,8 +178,8 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 	
 	delete[] ptFCh;
 	delete[] ptFCh_row;
-	delete[] ptDet;
-	delete[] ptRatio;
+	//delete ptDet;
+	//delete ptRatio;
 }
 
 // img - input image
@@ -134,6 +187,7 @@ void CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vect
 // vImgDetect [0..scales], inside vector is for different classes
 double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat>>& vImgDetect, Results& result)
 {	
+	int cl2 = num_of_classes*2;
 	// [0] - summary time
 	// [1] - init. maps
 	// [2] - detectColor
@@ -160,33 +214,31 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 		{
 			init_maps = clock();
 			// mats for classes and [i] scale
-			vector<cv::Mat> tmps(num_of_classes);
+			cv::Mat tmps;
 			vImgDetect[i].resize(num_of_classes);
-			for(unsigned int c = 0; c < num_of_classes; c++)
-			{
-				tmps[c].create ( cvSize(int(img.cols*scales[i]+0.5),int(img.rows*scales[i]+0.5)), CV_32FC1 );
-			}
+			cv::Size scaled_size(int(img.cols*scales[i]+0.5),int(img.rows*scales[i]+0.5));
+			//tmps.create (scaled_size, CV_32FC(num_of_classes) );
 
-			cv::Mat cLevel (tmps[0].rows, tmps[0].cols, CV_8UC3);				
-			cv::resize( img, cLevel, cv::Size(tmps[0].cols, tmps[0].rows));//CV_INTER_LINEAR is default
+			cv::Mat cLevel (tmps.rows, tmps.cols, CV_8UC3);				
+			cv::resize( img, cLevel, scaled_size);//CV_INTER_LINEAR is default
 			
-			vector<cv::Mat> ratios(num_of_classes);
+			cv::Mat ratios;
 
 			init_maps = clock() - init_maps;
 			timers[1] += init_maps;
 
 			// detection
 			detecCol = clock();
-			detectColor(cLevel, tmps, ratios);
+			detectColor(cLevel, scaled_size, tmps, ratios);
 			detecCol = clock() - detecCol;
 			timers[2]+=detecCol;
 
 			int treshold = 150;
-			
-			for (int c = 0; c < num_of_classes; c++) {
-				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
-				tmps[c].release();
-			}
+
+			cv::split(tmps, vImgDetect[i]);
+			for (int c = 0; c<num_of_classes;c++)
+				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
+			tmps.release();
 
 			
 			localmax = clock();
@@ -196,10 +248,12 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			timers[3] = localmax;
 
 			maxFind = clock();
+			int step = ratios.step1();
 			for (int k = maxs.size()-1; k>=max_index;k--)
 			{
 				int cl = maxs[k].class_label;
-				cv::Vec2f vec = ratios[cl].at<cv::Vec2f>(maxs[k].point.y, maxs[k].point.x);
+				float* ptr = (float*)ratios.data + maxs[k].point.y*step + maxs[k].point.x * cl2 + 2*cl;
+				float vec[] = {*ptr, *(ptr+1)};
 				maxs[k].ratio = vec[0]/(float)vec[1];
 				maxs[k].point.x /= scales[i];
 				maxs[k].point.y /= scales[i];
@@ -209,9 +263,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			maxFind = clock()-maxFind;
 			timers[4]+=maxFind;
 
-			for (int z = 0; z < ratios.size(); z++)
-				ratios[z].release();
-			ratios.clear();
+			ratios.release();
 				
 			cLevel.release();
 		}
@@ -339,4 +391,33 @@ bool CRForestDetector::localMaxima(cv::Mat src, cv::Size size, std::vector<MaxPo
 		}
 	}
 	return true;
+}
+
+void CRForestDetector::convertToMultiChannel(array_view<unsigned int>& outputView, vector<cv::Mat> input)
+{
+	int sz[] = {input[0].rows, input[0].cols};
+	int rows = sz[0];
+	int cols = sz[1];
+	int channels = input.size();
+
+	
+	for(int c = 0; c < channels; c++)
+	{
+		using namespace concurrency;
+	
+		concurrency::extent<1> eIn((rows*cols+3)/4);
+		array_view<const unsigned int, 1> inputView (eIn, reinterpret_cast<unsigned int*>(input[c].data));	
+
+		concurrency::extent<2> e(rows, cols);
+		parallel_for_each(e, [=](index<2>idx) restrict (amp)
+		{
+			unsigned int ch = read_uchar(inputView, idx, cols);
+			//write
+			int step = cols*channels;
+			int index = idx[0]*step+idx[1]*channels+c;
+			atomic_fetch_xor(&outputView[index >> 2], outputView[index >> 2] & (0xFF << ((index & 0x3) << 3)));
+			atomic_fetch_xor(&outputView[index >> 2], (ch & 0xFF) << ((index & 0x3) << 3));
+		});
+	}
+	outputView.synchronize();
 }
