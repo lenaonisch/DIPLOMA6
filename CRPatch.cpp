@@ -177,6 +177,13 @@ void CRPatch::extractFeatureChannels(cv::Mat img, std::vector<cv::Mat>& vImg) {
 
 }
 
+void CRPatch::extractFeatureChannels(cv::Mat img, cv::Mat& cImg)
+{
+	std::vector<cv::Mat> vImg;
+	extractFeatureChannels(img, vImg);
+	cv::merge(vImg, cImg);
+}
+
 void CRPatch::maxfilt(cv::Mat src, unsigned int width) {
 
 	uchar* s_data = src.data;

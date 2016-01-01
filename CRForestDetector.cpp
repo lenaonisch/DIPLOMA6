@@ -13,41 +13,52 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 
 	int timer_regression = 0, timer_leaf_process = 0;
 
-	int img_width = img.rows;
 	// extract features
-	std::vector<cv::Mat> vImg;
-	CRPatch::extractFeatureChannels(img, vImg);
-	int rows = img.rows;
-	int cols = img.cols;
+	cv::Mat vImg;
+	vector<cv::Mat> vImg_old;
+	int time_cv_merge = clock();
+	cv::Mat vCVMerge;
+	cv::Mat img_2;
+	img.copyTo(img_2);
+	CRPatch::extractFeatureChannels(img_2, vCVMerge);
+	time_cv_merge = clock() - time_cv_merge;
+	vCVMerge.release();
+	//vImg.release();
+
+	using namespace concurrency;
+
+	int time_amp_merge = clock();
+	CRPatch::extractFeatureChannels(img, vImg_old);
+	int rows = size.height;
+	int cols = size.width;
 	int sz[] = {rows,cols};
-	int channels = vImg.size();
+	int channels = vImg_old.size();
 	
-	//output.create(rows,cols, CV_8UC(channels)); 
-	//uchar* out_ptr = output.data;
-	//concurrency::extent<1> eOut((rows*cols*channels+3)/4);
-	//array_view<unsigned int, 1> vImgView (eOut, reinterpret_cast<unsigned int*>(output.data));
-	//vImgView.discard_data();
-	//convertToMultiChannel(vImgView, vImg);
-	//for(int c = 0; c < channels; c++)
-	//{
-	//	//using namespace concurrency;
-	//
-	//	//concurrency::extent<1> eIn((rows*cols+3)/4);
-	//	//array_view<const unsigned int, 1> inputView (eIn, reinterpret_cast<unsigned int*>(vImg[c].data));	
+	vImg.create(rows,cols, CV_8UC(channels)); 
+	int step_output = vImg.step1();
+	int step_input = vImg_old[0].step1();
+	concurrency::extent<1> eOut((rows*cols*channels+3)/4);
+	array_view<unsigned int, 1> vImgView (eOut, reinterpret_cast<unsigned int*>(vImg.data));
+	vImgView.discard_data();
 
-	//	//concurrency::extent<2> e(rows, cols);
-	//	int step_input = vImg[c].step1();
-	//	int step_output = output.step1();
-	//	int temp = cols*channels;
-	//	//parallel_for_each(e, [=](index<2>idx) restrict (amp)
-	//	//{
-	//	//	unsigned int ch = read_uchar(inputView, idx, step_input);
-	//	//	//write
-	//	//	int index = idx[0]*step_output+idx[1]*channels+c;
-	//	//	atomic_fetch_xor(&vImgView[index >> 2], vImgView[index >> 2] & (0xFF << ((index & 0x3) << 3)));
-	//	//	atomic_fetch_xor(&vImgView[index >> 2], (ch & 0xFF) << ((index & 0x3) << 3));
-	//	//});
+	for(int c = 0; c < channels; c++)
+	{
+		concurrency::extent<1> eIn((rows*cols+3)/4);
+		array_view<const unsigned int, 1> inputView (eIn, reinterpret_cast<unsigned int*>(vImg_old[c].data));	
 
+		concurrency::extent<2> e(rows, cols);
+		parallel_for_each(e, [=](index<2>idx) restrict (amp)
+		{
+			unsigned int ch = read_uchar(inputView, idx[0], idx[1], step_input);
+			//write
+			int index = idx[0]*step_output+idx[1]*channels+c;
+			atomic_fetch_xor(&vImgView[index >> 2], vImgView[index >> 2] & (0xFF << ((index & 0x3) << 3)));
+			atomic_fetch_xor(&vImgView[index >> 2], (ch & 0xFF) << ((index & 0x3) << 3));
+		});
+		vImgView.synchronize();
+	}
+	
+	time_amp_merge = clock() - time_amp_merge;
 
 	// reset output image
 	imgDetect = cv::Mat::zeros(size, CV_32FC(num_of_classes)); // CV_32FC1 !!
@@ -57,16 +68,16 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 /////////////must be commented
 	// get pointers to feature channels
 	int stepImg;
-	//uchar* ptFCh;
-	//uchar* ptFCh_row;
-	//ptFCh = output.data;
-	//stepImg = output.step1();
-	uchar** ptFCh     = new uchar*[vImg.size()];
-	uchar** ptFCh_row = new uchar*[vImg.size()];
-	for(unsigned int c=0; c<vImg.size(); ++c) {
-		ptFCh[c] = vImg[c].data;
-	}
-	stepImg = vImg[0].step1();
+	uchar* ptFCh;
+	uchar* ptFCh_row;
+	ptFCh = vImg.data;
+	stepImg = vImg.step1();
+	//uchar** ptFCh_old     = new uchar*[vImg_old.size()];
+	//uchar** ptFCh_row_old = new uchar*[vImg_old.size()];
+	//for(unsigned int c=0; c<vImg_old.size(); ++c) {
+	//	ptFCh_old[c] = vImg_old[c].data;
+	//}
+	//int stepImg_old = vImg_old[0].step1();
 
 	// get pointer to output image
 	int stepDet;
@@ -108,17 +119,20 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 	for(y=0; y<img.rows-height; ++y, ++cy) 
 	{
 		// Get start of row
-		for(unsigned int c=0; c<vImg.size(); ++c)
-			ptFCh_row[c] = &ptFCh[c][0];
+		//for(unsigned int c=0; c<vImg_old.size(); ++c)
+		//	ptFCh_row_old[c] = ptFCh_old[c];
+		//for(unsigned int c=0; c<vImg.size(); ++c)
+		ptFCh_row = ptFCh;
 		cx = xoffset; 
 		
 		for(x=0; x<img.cols-width; ++x, ++cx) 
 		{					
 			// regression for a single patch
 			int temp = clock();
+			
 			vector<const LeafNode*> result;
-			//crForest->regression(result, ptFCh_row, stepImg, channels);
-			crForest->regression(result, ptFCh_row, stepImg);
+			crForest->regression(result, ptFCh_row, stepImg, channels);
+
 			timer_regression+=(clock()-temp);
 			
 			// vote for all trees (leafs) 
@@ -158,14 +172,18 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 			timer_leaf_process+=clock()-temp;
 
 			// increase pointer - x
-			for(unsigned int c=0; c<vImg.size(); ++c)
-				++ptFCh_row[c];
+			//for(unsigned int c=0; c<vImg.size(); ++c)
+			ptFCh_row+=channels;
+			//for(unsigned int c=0; c<vImg_old.size(); ++c)
+			//	++ptFCh_row_old[c];
 
 		} // end for x
 
 		// increase pointer - y
-		for(unsigned int c=0; c<vImg.size(); ++c)
-			ptFCh[c] += stepImg;
+		//for(unsigned int c=0; c<vImg.size(); ++c)
+			ptFCh += stepImg;
+		//for(unsigned int c=0; c<vImg_old.size(); ++c)
+		//	ptFCh_old[c] += stepImg_old;
 
 	} // end for y 	
 
@@ -173,11 +191,11 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 	cv::GaussianBlur(imgDetect, imgDetect, cv::Size(3,3), 0);
 
 	// release feature channels
-	for(unsigned int c=0; c<vImg.size(); ++c)
-		vImg[c].release();
+	//for(unsigned int c=0; c<vImg.size(); ++c)
+	vImg.release();
 	
-	delete[] ptFCh;
-	delete[] ptFCh_row;
+	//delete[] ptFCh;
+	//delete[] ptFCh_row;
 	//delete ptDet;
 	//delete ptRatio;
 }
@@ -399,7 +417,7 @@ void CRForestDetector::convertToMultiChannel(array_view<unsigned int>& outputVie
 	int rows = sz[0];
 	int cols = sz[1];
 	int channels = input.size();
-
+	int step = cols*channels;
 	
 	for(int c = 0; c < channels; c++)
 	{
@@ -413,7 +431,6 @@ void CRForestDetector::convertToMultiChannel(array_view<unsigned int>& outputVie
 		{
 			unsigned int ch = read_uchar(inputView, idx, cols);
 			//write
-			int step = cols*channels;
 			int index = idx[0]*step+idx[1]*channels+c;
 			atomic_fetch_xor(&outputView[index >> 2], outputView[index >> 2] & (0xFF << ((index & 0x3) << 3)));
 			atomic_fetch_xor(&outputView[index >> 2], (ch & 0xFF) << ((index & 0x3) << 3));

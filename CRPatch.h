@@ -34,6 +34,9 @@ public:
 
 	// Extract features from image
 	static void extractFeatureChannels(cv::Mat img, std::vector<cv::Mat>& vImg);
+public:	
+	// Extract features from image
+	static void extractFeatureChannels(cv::Mat img, cv::Mat& cImg);
 	// min/max filter
 	static void maxfilt(uchar* data, uchar* maxvalues, unsigned int step, unsigned int size, unsigned int width);
 	static void maxfilt(uchar* data, unsigned int step, unsigned int size, unsigned int width);
