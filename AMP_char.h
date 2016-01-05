@@ -80,11 +80,11 @@ void write_uchar(T& arr, index<2> idx, int step, unsigned int val) restrict(amp)
 
 // 3D indexes
 template <typename T>
-unsigned int read_uchar(T& arr, index<3>idx, int cols, int channels) restrict(amp)
+unsigned int read_uchar(T& arr, index<3>idx, int step, int channels) restrict(amp, cpu)
 {
-	int step = cols*channels;
-	int idx = idx[0]*step+idx[1]*channels+idx[2];
-    return (arr[idx >> 2] & (0xFF << ((idx & 0x3) << 3))) >> ((idx & 0x3) << 3);
+	//int step = cols*channels;
+	int index = idx[0]*step + idx[1]*channels + idx[2];
+    return (arr[index >> 2] & (0xFF << ((index & 0x3) << 3))) >> ((index & 0x3) << 3);
 }
 
 template<typename T>

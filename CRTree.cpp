@@ -14,6 +14,8 @@ using namespace std;
 // Read tree from file
 CRTree::CRTree(const char* filename) {
 	int dummy;
+	treetable_count = 0;
+	center_count = 0;
 
 	FILE * pFile = fopen (filename,"r");
 	if (pFile != NULL)
@@ -32,7 +34,7 @@ CRTree::CRTree(const char* filename) {
 		{
 			fscanf (pFile, "%i %i", &dummy, &dummy);
 			fscanf (pFile, "%i", ptT); // 0th
-			if (&ptT>0)
+			if (ptT[0]!=0)
 				treetable_count++;
 			ptT++;
 			for(unsigned int i=1; i<7; ++i, ++ptT) {
@@ -161,6 +163,7 @@ void CRTree::growTree(const CRPatch& TrData, int samples) {
 		}
 	}
 
+	makeEmptyLeaf(); // fake leaf
 	// Grow tree
 	grow(TrainSet, 0, 0, samples, vRatio );
 
@@ -237,6 +240,19 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 		makeLeaf(TrainSet, vRatio, node);
 	
 	}
+}
+
+// workaround when node has only one child: creates leaf for background
+void CRTree::makeEmptyLeaf() {
+	LeafNode* ptL = &leaf[0];
+
+	// Store data
+	ptL->pfg.resize(num_of_classes, 0);
+	ptL->vCenter.resize(num_of_classes);
+	ptL->vRatio.resize(num_of_classes,1);
+
+	// Increase leaf counter
+	++num_leaf;
 }
 
 // Create leaf node from patches 
@@ -546,7 +562,7 @@ void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& treepo
 		{
 			ind[i] = not_empty++;
 			for (int k = 0; k < 7; k++, table_++)
-				*table_ = pnode[k];
+				table_[0] = pnode[k];
 		}
 	}
 
@@ -555,16 +571,17 @@ void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& treepo
 	//unsigned int* amp_leafpointer;
 	//amp_leafpointer = new unsigned int[num_leaf];
 	//amp_leafs = new int[2*center_count+num_leaf*num_of_classes*3];
+
 	int * ptr = (int*)leafs.data + leafs.step1()*row;
-	unsigned int* pointer_ptr = (unsigned int*)leafpointer.data + leafpointer.step1()*row;
+	int * pointer_ptr = (int*)leafpointer.data + leafpointer.step1()*row;
 	int i = 0;
 	for (int l = 0; l < num_leaf; l++)
 	{
 		*pointer_ptr++ = i;
 		for (int k = 0; k<num_of_classes;k++)
 		{
-			*ptr++ = leaf[l].pfg[k];
-			*ptr++ = leaf[l].vRatio[k];
+			*ptr++ = leaf[l].pfg[k]*100;
+			*ptr++ = leaf[l].vRatio[k]*100;
 
 			int c_size = leaf[l].vCenter[k].size();
 			*ptr++ = c_size;

@@ -104,6 +104,7 @@ private:
 	// Private functions for training
 	void grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, vector<float> vRatio);
 	void makeLeaf(const vector<vector<const PatchFeature*> >& TrainSet, vector<float> vRatio, int node);
+	void makeEmptyLeaf();
 	bool optimizeTest(vector<vector<const PatchFeature*> >& SetA, vector<vector<const PatchFeature*> >& SetB, const vector<vector<const PatchFeature*> >& TrainSet, int* test, unsigned int iter, unsigned int mode);
 	void generateTest(int* test, unsigned int max_w, unsigned int max_h, unsigned int max_c);
 	void evaluateTest(vector<vector<IntIndex> >& valSet, const int* test, const vector<vector<const PatchFeature*> >& TrainSet);
@@ -140,10 +141,10 @@ private:
 
 	// depth of the tree: 0-max_depth
 	unsigned int max_depth;
-
+public:
 	// number of nodes: 2^(max_depth+1)-1
 	unsigned int num_nodes;
-public:
+
 	// number of leafs
 	unsigned int num_leaf;
 

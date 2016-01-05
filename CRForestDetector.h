@@ -94,11 +94,11 @@ public:
 	}
 	void convertToMultiChannel(concurrency::array_view<unsigned int>& outputView, vector<cv::Mat> input);
 
-	int*** treetable;
-	unsigned int** treepointer;
+	//int*** treetable;
+	//unsigned int** treepointer;
 
-	float** leafs;
-	unsigned int** leafpointer;
+	//float** leafs;
+	//unsigned int** leafpointer;
 private:
 	void detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios);
 	const CRForest* crForest;
