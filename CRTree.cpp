@@ -580,7 +580,7 @@ void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& treepo
 		*pointer_ptr++ = i;
 		for (int k = 0; k<num_of_classes;k++)
 		{
-			*ptr++ = leaf[l].pfg[k]*100;
+			*ptr++ = leaf[l].pfg[k]*1000;
 			*ptr++ = leaf[l].vRatio[k]*100;
 
 			int c_size = leaf[l].vCenter[k].size();
