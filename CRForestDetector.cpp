@@ -24,14 +24,6 @@ inline array_view<const int,2> GetLeafByID(array_view<const int, 2> leafs,
 	return leafs.section(tree_ID[0], leaf_index, 1, len);
 }
 
-// returns ONE-dimentional array with node data
-inline array_view<const int,2> GetNodeByID(array_view<const int, 2> treetable, array_view<const int,2> treepointer, index<2> tree_ID) restrict (amp, cpu)
-{
-	//int* ptr = amp_treetable + tree*amp_treetable_step1 + (*(amp_treepointer + tree*amp_treepointer_step1+ID))*7;
-	//concurrency::array_view<int,1> res(7, ptr);
-	return treetable.section(tree_ID[0], treepointer[tree_ID]*7, 1, 7);
-}
-
 inline int regression_leaf_index(array_view<unsigned int, 1> vImgView, 
 						  index<3>idx,
 						  array_view<const int, 2> treetableView,
@@ -41,7 +33,7 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 	int tree_count = treetableView.extent[0];
 	
 	int node_index = 0;
-	auto treenode = GetNodeByID(treetableView, treepointerView, index<2>(idx[2], node_index));
+	auto treenode = treetableView.section(idx[2], treepointerView[index<2>(idx[2], node_index)]*7, 1, 7);
 	while(treenode[index<2> (0, 0)] == -1)
 	{
 		// binary test 0 - left, 1 - right
@@ -63,10 +55,9 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 		// increment node/pointer by node_id + 1 + test
 		int incr = node_index+1+test;
 		node_index += incr; //after this operation node contains node_id
-		index<2> temp (idx[2], node_index);
-		if (treepointerView[temp]<0)
+		if (treepointerView[index<2>(idx[2], node_index)]<0)
 			return 0;
-		treenode = GetNodeByID(treetableView, treepointerView, temp); 
+		treenode =  treetableView.section(idx[2], treepointerView[index<2>(idx[2], node_index)]*7, 1, 7);
 	}
 	return treenode[index<2> (0, 0)];
 }
@@ -90,6 +81,7 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 	int sz[] = {rows,cols};
 	int channels = vCVMerge.channels();
 	int step = vCVMerge.step1();
+	try {
 	concurrency::extent<1> eOut((rows*cols*channels+3)/4);
 	array_view<unsigned int, 1> vImgView (eOut, reinterpret_cast<unsigned int*>(vCVMerge.data));
 	
@@ -123,8 +115,8 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 
 /////////////must be commented
 	// get pointer to output image
-	int stepDet = imgDetect.step1();
-	int stepRatio = ratios.step1();
+	//int stepDet = imgDetect.step1();
+	//int stepRatio = ratios.step1();
 ////////////////////////////must be commented
 	int xoffset = width/2;
 	int yoffset = height/2;
@@ -156,17 +148,11 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 
 	int tree_count = crForest->vTrees.size();
 	concurrency::extent<3> e_main(img.rows-height, img.cols-width, tree_count);
-	//parallel_for_each(e_main, [=](index<3>idx) restrict (amp)
-	for (int idx0 = 0; idx0<img.rows-height; idx0++)
-		for(int idx1 = 0; idx1<img.cols-width; idx1++)
-			for(int idx2 = 0; idx2<tree_count; idx2++)
+	parallel_for_each(e_main, [=](index<3>idx) restrict (amp)
 	{
-		index<3>idx(idx0, idx1,idx2);
 		int leaf_index = regression_leaf_index(vImgView, idx, treetableView, treepointerView, channels, step);
 		if (leaf_index != 0)
 		{
-			int cy = idx[0] + yoffset; 
-			int cx = idx[1] + xoffset;
 			auto leaf = GetLeafByID(leafsView, leafpointerView, index<2>(idx[2], leaf_index), num_of_classes_);
 			for (int c = 0; c < num_of_classes_; c++)
 			{
@@ -188,8 +174,8 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 
 					for (int point = 0; point < cntr_size; point++)
 					{
-						int x_ = int(cx - leaf[index<2>(0, ++ind)] + 0.5);
-						int y_ = cy-leaf[index<2>(0, ++ind)];
+						int x_ = int(idx[1] + xoffset - leaf[index<2>(0, ++ind)] + 0.5f);
+						int y_ = idx[0] + yoffset - leaf[index<2>(0, ++ind)];
 						if(y_ >= 0 && y_ < rows && x_ >= 0 && x_ < cols)
 						{
 							//atomic_fetch_add(&ptDetView[index<3>(y_, x_, c)], w);
@@ -201,14 +187,18 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 				//} // end if
 			}
 		}	
-	}//);
+	});
 	
+	ptDetView.synchronize();
+	ptRatioView.synchronize();
+	}
+	catch(runtime_exception& ex)
 
-	//ptDetView.synchronize();
-	//ptRatioView.synchronize();
+{
 
-	// smooth result image
-//	cv::GaussianBlur(imgDetect, imgDetect, cv::Size(3,3), 0);
+  string sEx = ex.what();
+
+}
 
 	// release feature channels
 	//for(unsigned int c=0; c<vImg.size(); ++c)
@@ -276,7 +266,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			cv::split(tmps, vImgDetect[i]);
 			for (int c = 0; c<num_of_classes;c++)
 			{
-				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale/1000.0);
+				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale/10000.0);
 				GaussianBlur(vImgDetect[i][c], vImgDetect[i][c], cv::Size(3,3), 0);
 			}
 			tmps.release();
@@ -295,7 +285,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 				int cl = maxs[k].class_label;
 				float* ptr = (float*)ratios.data + maxs[k].point.y*step + maxs[k].point.x * cl2 + 2*cl;
 				float vec[] = {*ptr, *(ptr+1)};
-				maxs[k].ratio = vec[0]/(float)vec[1];
+				maxs[k].ratio = vec[0]/(float)(vec[1]*100);
 				maxs[k].point.x /= scales[i];
 				maxs[k].point.y /= scales[i];
 			}
