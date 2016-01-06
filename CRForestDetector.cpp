@@ -288,6 +288,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 				maxs[k].ratio = vec[0]/(float)(vec[1]*100);
 				maxs[k].point.x /= scales[i];
 				maxs[k].point.y /= scales[i];
+				maxs[k].scale = scales[i];
 			}
 			max_index = maxs.size();
 
@@ -321,7 +322,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			if (maxs[j].pf != 0)
 			{
 				result.classes.push_back(maxs[j].class_label); 
-				int w = width_aver[maxs[j].class_label];
+				int w = width_aver[maxs[j].class_label]/maxs[j].scale;
 				int h = w * maxs[j].ratio;
 				result.rects.push_back(cv::Rect(maxs[j].point.x - w/2, maxs[j].point.y - h/2, w, h));
 			}
