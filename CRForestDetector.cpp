@@ -65,47 +65,47 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 // imgDetect - vector.size == num_of_classes
 void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios) {
 
-	// extract features
-	cv::Mat vImg;
+	//// extract features
+	//cv::Mat vImg;
 	vector<cv::Mat> vImg_old;
 	cv::Mat vCVMerge;
-	//cv::Mat img_2;
-	//img.copyTo(img_2);
-	CRPatch::extractFeatureChannels(img, vCVMerge);
+	////cv::Mat img_2;
+	////img.copyTo(img_2);
+	//CRPatch::extractFeatureChannels(img, vCVMerge);
 
-	using namespace concurrency;
+	//using namespace concurrency;
 
-	//CRPatch::extractFeatureChannels(img, vImg_old);
+	CRPatch::extractFeatureChannels(img, vImg_old);
 	int rows = size.height;
 	int cols = size.width;
-	int sz[] = {rows,cols};
-	int channels = vCVMerge.channels();
+	//int sz[] = {rows,cols};
+	int channels = vImg_old.size();
+	vCVMerge.create(rows,cols, CV_8UC(channels)); 
+	//int step = vCVMerge.step1();
+try {
+	//concurrency::extent<1> eOut((rows*cols*channels+3)/4);
+	//array_view<unsigned int, 1> vImgView (eOut, reinterpret_cast<unsigned int*>(vCVMerge.data));
+	
 	int step = vCVMerge.step1();
-	try {
+	int step_input = vImg_old[0].step1();
 	concurrency::extent<1> eOut((rows*cols*channels+3)/4);
 	array_view<unsigned int, 1> vImgView (eOut, reinterpret_cast<unsigned int*>(vCVMerge.data));
-	
-	//vImg.create(rows,cols, CV_8UC(channels)); 
-	//int step_output = vImg.step1();
-	//int step_input = vImg_old[0].step1();
-	//concurrency::extent<1> eOut((rows*cols*channels+3)/4);
-	//array_view<unsigned int, 1> vImgView (eOut, reinterpret_cast<unsigned int*>(vImg.data));
-	//vImgView.discard_data();
-	//for(int c = 0; c < channels; c++)
-	//{
-	//	concurrency::extent<1> eIn((rows*cols+3)/4);
-	//	array_view<const unsigned int, 1> inputView (eIn, reinterpret_cast<unsigned int*>(vImg_old[c].data));	
-	//	concurrency::extent<2> e(rows, cols);
-	//	parallel_for_each(e, [=](index<2>idx) restrict (amp)
-	//	{
-	//		unsigned int ch = read_uchar(inputView, idx[0], idx[1], step_input);
-	//		//write
-	//		int index = idx[0]*step_output+idx[1]*channels+c;
-	//		atomic_fetch_xor(&vImgView[index >> 2], vImgView[index >> 2] & (0xFF << ((index & 0x3) << 3)));
-	//		atomic_fetch_xor(&vImgView[index >> 2], (ch & 0xFF) << ((index & 0x3) << 3));
-	//	});
-	//	vImgView.synchronize();
-	//}
+	vImgView.discard_data();
+	for(int c = 0; c < channels; c++)
+	{
+		concurrency::extent<1> eIn((rows*cols+3)/4);
+		array_view<const unsigned int, 1> inputView (eIn, reinterpret_cast<unsigned int*>(vImg_old[c].data));	
+		concurrency::extent<2> e(rows, cols);
+		parallel_for_each(e, [=](index<2>idx) restrict (amp)
+		{
+			unsigned int ch = read_uchar(inputView, idx[0], idx[1], step_input);
+			//write
+			int index = idx[0]*step+idx[1]*channels+c;
+			atomic_fetch_xor(&vImgView[index >> 2], vImgView[index >> 2] & (0xFF << ((index & 0x3) << 3)));
+			atomic_fetch_xor(&vImgView[index >> 2], (ch & 0xFF) << ((index & 0x3) << 3));
+		});
+		vImgView.synchronize();
+	}
 
 	// reset output image
 	imgDetect = cv::Mat::zeros(size, CV_32SC(num_of_classes)); // CV_32FC1 !!
