@@ -75,6 +75,13 @@ public:
 		return filepath.substr(found+1);	
 	}
 
+	void getFilenameExt(string filepath, string& name, string& ext){
+		std::size_t found = filepath.find_last_of("/");
+		string filename = filepath.substr(found+1);	
+		found = filename.find_last_of(".");
+		name = filename.substr(0, found);
+		ext = filename.substr(found+1);
+	}
 
 	void read_classes()
 	{

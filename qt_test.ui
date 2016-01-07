@@ -14,8 +14,8 @@
    <string>qt_test</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>GeneratedFiles/icon.bmp</normaloff>GeneratedFiles/icon.bmp</iconset>
+   <iconset resource="qt_test.qrc">
+    <normaloff>:/qt_test/GeneratedFiles/icon.bmp</normaloff>:/qt_test/GeneratedFiles/icon.bmp</iconset>
   </property>
   <property name="toolTip">
    <string>Delete single item</string>
@@ -71,8 +71,8 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>GeneratedFiles/plus.png</normaloff>GeneratedFiles/plus.png</iconset>
+              <iconset resource="qt_test.qrc">
+               <normaloff>:/qt_test/GeneratedFiles/plus.png</normaloff>:/qt_test/GeneratedFiles/plus.png</iconset>
              </property>
             </widget>
            </item>
@@ -85,8 +85,8 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>GeneratedFiles/minus.png</normaloff>GeneratedFiles/minus.png</iconset>
+              <iconset resource="qt_test.qrc">
+               <normaloff>:/qt_test/GeneratedFiles/minus.png</normaloff>:/qt_test/GeneratedFiles/minus.png</iconset>
              </property>
             </widget>
            </item>
@@ -162,8 +162,8 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>GeneratedFiles/refresh.png</normaloff>GeneratedFiles/refresh.png</iconset>
+              <iconset resource="qt_test.qrc">
+               <normaloff>:/qt_test/GeneratedFiles/refresh.png</normaloff>:/qt_test/GeneratedFiles/refresh.png</iconset>
              </property>
             </widget>
            </item>
@@ -173,8 +173,8 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>GeneratedFiles/delete.png</normaloff>GeneratedFiles/delete.png</iconset>
+              <iconset resource="qt_test.qrc">
+               <normaloff>:/qt_test/GeneratedFiles/delete.png</normaloff>:/qt_test/GeneratedFiles/delete.png</iconset>
              </property>
              <property name="shortcut">
               <string>Ctrl+D</string>
@@ -190,8 +190,8 @@
               <string/>
              </property>
              <property name="icon">
-              <iconset>
-               <normaloff>GeneratedFiles/bin.png</normaloff>GeneratedFiles/bin.png</iconset>
+              <iconset resource="qt_test.qrc">
+               <normaloff>:/qt_test/GeneratedFiles/bin.png</normaloff>:/qt_test/GeneratedFiles/bin.png</iconset>
              </property>
             </widget>
            </item>
@@ -288,8 +288,10 @@
     <addaction name="actionDetect"/>
     <addaction name="actionBatch_detect"/>
     <addaction name="separator"/>
-    <addaction name="actionTest_local_max"/>
-    <addaction name="actionMean_shift"/>
+    <addaction name="actionAdd_positive"/>
+    <addaction name="actionAdd_negative"/>
+    <addaction name="actionRemove"/>
+    <addaction name="actionDrop_All_results"/>
    </widget>
    <widget class="QMenu" name="menuSetup">
     <property name="title">
@@ -305,6 +307,7 @@
     </property>
     <addaction name="actionZoom_in_2"/>
     <addaction name="actionZoom_out_2"/>
+    <addaction name="actionRefresh"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -320,19 +323,14 @@
   </widget>
   <action name="actionOpen">
    <property name="icon">
-    <iconset>
-     <normaloff>GeneratedFiles/open.png</normaloff>GeneratedFiles/open.png</iconset>
+    <iconset resource="qt_test.qrc">
+     <normaloff>:/qt_test/GeneratedFiles/open.png</normaloff>:/qt_test/GeneratedFiles/open.png</iconset>
    </property>
    <property name="text">
     <string>Open</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
-   </property>
-  </action>
-  <action name="actionLoad_config">
-   <property name="text">
-    <string>Load config</string>
    </property>
   </action>
   <action name="actionTrain">
@@ -343,22 +341,12 @@
     <string>Train</string>
    </property>
   </action>
-  <action name="actionShow">
-   <property name="text">
-    <string>Show</string>
-   </property>
-  </action>
-  <action name="actionShow_leaves">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Show leaves</string>
-   </property>
-  </action>
   <action name="actionLoad_config_file">
    <property name="text">
     <string>Load config file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="actionDetect">
@@ -368,6 +356,9 @@
    <property name="text">
     <string>Detect</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
   </action>
   <action name="actionBatch_detect">
    <property name="enabled">
@@ -376,21 +367,8 @@
    <property name="text">
     <string>Batch detect</string>
    </property>
-  </action>
-  <action name="actionZoom_in">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Zoom in</string>
-   </property>
-  </action>
-  <action name="actionZoom_out">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Zoom out</string>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
    </property>
   </action>
   <action name="actionZoom_in_2">
@@ -409,22 +387,57 @@
     <string>Ctrl+-</string>
    </property>
   </action>
-  <action name="actionTest_local_max">
-   <property name="text">
-    <string>test local max</string>
-   </property>
-  </action>
-  <action name="actionMean_shift">
-   <property name="text">
-    <string>mean shift</string>
-   </property>
-  </action>
   <action name="actionLoad_test_images">
    <property name="enabled">
     <bool>false</bool>
    </property>
    <property name="text">
     <string>Load test images</string>
+   </property>
+  </action>
+  <action name="actionRefresh">
+   <property name="icon">
+    <iconset resource="qt_test.qrc">
+     <normaloff>:/qt_test/GeneratedFiles/refresh.png</normaloff>:/qt_test/GeneratedFiles/refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>Refresh</string>
+   </property>
+  </action>
+  <action name="actionAdd_positive">
+   <property name="icon">
+    <iconset resource="qt_test.qrc">
+     <normaloff>:/qt_test/GeneratedFiles/plus.png</normaloff>:/qt_test/GeneratedFiles/plus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add positive</string>
+   </property>
+  </action>
+  <action name="actionAdd_negative">
+   <property name="icon">
+    <iconset resource="qt_test.qrc">
+     <normaloff>:/qt_test/GeneratedFiles/minus.png</normaloff>:/qt_test/GeneratedFiles/minus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add negative</string>
+   </property>
+  </action>
+  <action name="actionRemove">
+   <property name="icon">
+    <iconset resource="qt_test.qrc">
+     <normaloff>:/qt_test/GeneratedFiles/delete.png</normaloff>:/qt_test/GeneratedFiles/delete.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove</string>
+   </property>
+  </action>
+  <action name="actionDrop_All_results">
+   <property name="icon">
+    <iconset resource="qt_test.qrc">
+     <normaloff>:/qt_test/GeneratedFiles/bin.png</normaloff>:/qt_test/GeneratedFiles/bin.png</iconset>
+   </property>
+   <property name="text">
+    <string>Drop All results</string>
    </property>
   </action>
  </widget>
@@ -439,5 +452,86 @@
  <resources>
   <include location="qt_test.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionAdd_positive</sender>
+   <signal>triggered()</signal>
+   <receiver>btnAddPositive</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>210</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionAdd_negative</sender>
+   <signal>triggered()</signal>
+   <receiver>btnAddNegative</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>333</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionDrop_All_results</sender>
+   <signal>triggered()</signal>
+   <receiver>btnDropAllResults</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>550</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionRemove</sender>
+   <signal>triggered()</signal>
+   <receiver>btnRemove</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>497</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionRefresh</sender>
+   <signal>triggered()</signal>
+   <receiver>btnRefresh</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>445</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

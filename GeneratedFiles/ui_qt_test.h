@@ -37,20 +37,18 @@ class Ui_qt_testClass
 {
 public:
     QAction *actionOpen;
-    QAction *actionLoad_config;
     QAction *actionTrain;
-    QAction *actionShow;
-    QAction *actionShow_leaves;
     QAction *actionLoad_config_file;
     QAction *actionDetect;
     QAction *actionBatch_detect;
-    QAction *actionZoom_in;
-    QAction *actionZoom_out;
     QAction *actionZoom_in_2;
     QAction *actionZoom_out_2;
-    QAction *actionTest_local_max;
-    QAction *actionMean_shift;
     QAction *actionLoad_test_images;
+    QAction *actionRefresh;
+    QAction *actionAdd_positive;
+    QAction *actionAdd_negative;
+    QAction *actionRemove;
+    QAction *actionDrop_All_results;
     QWidget *centralWidget;
     QHBoxLayout *horizontalLayout_2;
     QTabWidget *tabWidget;
@@ -88,23 +86,16 @@ public:
             qt_testClass->setObjectName(QStringLiteral("qt_testClass"));
         qt_testClass->resize(605, 440);
         QIcon icon;
-        icon.addFile(QStringLiteral("GeneratedFiles/icon.bmp"), QSize(), QIcon::Normal, QIcon::Off);
+        icon.addFile(QStringLiteral(":/qt_test/GeneratedFiles/icon.bmp"), QSize(), QIcon::Normal, QIcon::Off);
         qt_testClass->setWindowIcon(icon);
         actionOpen = new QAction(qt_testClass);
         actionOpen->setObjectName(QStringLiteral("actionOpen"));
         QIcon icon1;
-        icon1.addFile(QStringLiteral("GeneratedFiles/open.png"), QSize(), QIcon::Normal, QIcon::Off);
+        icon1.addFile(QStringLiteral(":/qt_test/GeneratedFiles/open.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionOpen->setIcon(icon1);
-        actionLoad_config = new QAction(qt_testClass);
-        actionLoad_config->setObjectName(QStringLiteral("actionLoad_config"));
         actionTrain = new QAction(qt_testClass);
         actionTrain->setObjectName(QStringLiteral("actionTrain"));
         actionTrain->setEnabled(false);
-        actionShow = new QAction(qt_testClass);
-        actionShow->setObjectName(QStringLiteral("actionShow"));
-        actionShow_leaves = new QAction(qt_testClass);
-        actionShow_leaves->setObjectName(QStringLiteral("actionShow_leaves"));
-        actionShow_leaves->setEnabled(false);
         actionLoad_config_file = new QAction(qt_testClass);
         actionLoad_config_file->setObjectName(QStringLiteral("actionLoad_config_file"));
         actionDetect = new QAction(qt_testClass);
@@ -113,23 +104,38 @@ public:
         actionBatch_detect = new QAction(qt_testClass);
         actionBatch_detect->setObjectName(QStringLiteral("actionBatch_detect"));
         actionBatch_detect->setEnabled(false);
-        actionZoom_in = new QAction(qt_testClass);
-        actionZoom_in->setObjectName(QStringLiteral("actionZoom_in"));
-        actionZoom_in->setEnabled(false);
-        actionZoom_out = new QAction(qt_testClass);
-        actionZoom_out->setObjectName(QStringLiteral("actionZoom_out"));
-        actionZoom_out->setEnabled(false);
         actionZoom_in_2 = new QAction(qt_testClass);
         actionZoom_in_2->setObjectName(QStringLiteral("actionZoom_in_2"));
         actionZoom_out_2 = new QAction(qt_testClass);
         actionZoom_out_2->setObjectName(QStringLiteral("actionZoom_out_2"));
-        actionTest_local_max = new QAction(qt_testClass);
-        actionTest_local_max->setObjectName(QStringLiteral("actionTest_local_max"));
-        actionMean_shift = new QAction(qt_testClass);
-        actionMean_shift->setObjectName(QStringLiteral("actionMean_shift"));
         actionLoad_test_images = new QAction(qt_testClass);
         actionLoad_test_images->setObjectName(QStringLiteral("actionLoad_test_images"));
         actionLoad_test_images->setEnabled(false);
+        actionRefresh = new QAction(qt_testClass);
+        actionRefresh->setObjectName(QStringLiteral("actionRefresh"));
+        QIcon icon2;
+        icon2.addFile(QStringLiteral(":/qt_test/GeneratedFiles/refresh.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionRefresh->setIcon(icon2);
+        actionAdd_positive = new QAction(qt_testClass);
+        actionAdd_positive->setObjectName(QStringLiteral("actionAdd_positive"));
+        QIcon icon3;
+        icon3.addFile(QStringLiteral(":/qt_test/GeneratedFiles/plus.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionAdd_positive->setIcon(icon3);
+        actionAdd_negative = new QAction(qt_testClass);
+        actionAdd_negative->setObjectName(QStringLiteral("actionAdd_negative"));
+        QIcon icon4;
+        icon4.addFile(QStringLiteral(":/qt_test/GeneratedFiles/minus.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionAdd_negative->setIcon(icon4);
+        actionRemove = new QAction(qt_testClass);
+        actionRemove->setObjectName(QStringLiteral("actionRemove"));
+        QIcon icon5;
+        icon5.addFile(QStringLiteral(":/qt_test/GeneratedFiles/delete.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionRemove->setIcon(icon5);
+        actionDrop_All_results = new QAction(qt_testClass);
+        actionDrop_All_results->setObjectName(QStringLiteral("actionDrop_All_results"));
+        QIcon icon6;
+        icon6.addFile(QStringLiteral(":/qt_test/GeneratedFiles/bin.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionDrop_All_results->setIcon(icon6);
         centralWidget = new QWidget(qt_testClass);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         horizontalLayout_2 = new QHBoxLayout(centralWidget);
@@ -171,17 +177,13 @@ public:
         sizePolicy1.setVerticalStretch(0);
         sizePolicy1.setHeightForWidth(btnAddPositive->sizePolicy().hasHeightForWidth());
         btnAddPositive->setSizePolicy(sizePolicy1);
-        QIcon icon2;
-        icon2.addFile(QStringLiteral("GeneratedFiles/plus.png"), QSize(), QIcon::Normal, QIcon::Off);
-        btnAddPositive->setIcon(icon2);
+        btnAddPositive->setIcon(icon3);
 
         horizontalLayout->addWidget(btnAddPositive);
 
         btnAddNegative = new QPushButton(widget);
         btnAddNegative->setObjectName(QStringLiteral("btnAddNegative"));
-        QIcon icon3;
-        icon3.addFile(QStringLiteral("GeneratedFiles/minus.png"), QSize(), QIcon::Normal, QIcon::Off);
-        btnAddNegative->setIcon(icon3);
+        btnAddNegative->setIcon(icon4);
 
         horizontalLayout->addWidget(btnAddNegative);
 
@@ -230,24 +232,18 @@ public:
         horizontalLayout_3->setObjectName(QStringLiteral("horizontalLayout_3"));
         btnRefresh = new QPushButton(widget_2);
         btnRefresh->setObjectName(QStringLiteral("btnRefresh"));
-        QIcon icon4;
-        icon4.addFile(QStringLiteral("GeneratedFiles/refresh.png"), QSize(), QIcon::Normal, QIcon::Off);
-        btnRefresh->setIcon(icon4);
+        btnRefresh->setIcon(icon2);
 
         horizontalLayout_3->addWidget(btnRefresh);
 
         btnRemove = new QPushButton(widget_2);
         btnRemove->setObjectName(QStringLiteral("btnRemove"));
-        QIcon icon5;
-        icon5.addFile(QStringLiteral("GeneratedFiles/delete.png"), QSize(), QIcon::Normal, QIcon::Off);
         btnRemove->setIcon(icon5);
 
         horizontalLayout_3->addWidget(btnRemove);
 
         btnDropAllResults = new QPushButton(widget_2);
         btnDropAllResults->setObjectName(QStringLiteral("btnDropAllResults"));
-        QIcon icon6;
-        icon6.addFile(QStringLiteral("GeneratedFiles/bin.png"), QSize(), QIcon::Normal, QIcon::Off);
         btnDropAllResults->setIcon(icon6);
 
         horizontalLayout_3->addWidget(btnDropAllResults);
@@ -299,15 +295,23 @@ public:
         menuFile->addAction(actionDetect);
         menuFile->addAction(actionBatch_detect);
         menuFile->addSeparator();
-        menuFile->addAction(actionTest_local_max);
-        menuFile->addAction(actionMean_shift);
+        menuFile->addAction(actionAdd_positive);
+        menuFile->addAction(actionAdd_negative);
+        menuFile->addAction(actionRemove);
+        menuFile->addAction(actionDrop_All_results);
         menuSetup->addAction(actionLoad_config_file);
         menuSetup->addAction(actionTrain);
         menuSetup->addAction(actionLoad_test_images);
         menuView->addAction(actionZoom_in_2);
         menuView->addAction(actionZoom_out_2);
+        menuView->addAction(actionRefresh);
 
         retranslateUi(qt_testClass);
+        QObject::connect(actionAdd_positive, SIGNAL(triggered()), btnAddPositive, SLOT(click()));
+        QObject::connect(actionAdd_negative, SIGNAL(triggered()), btnAddNegative, SLOT(click()));
+        QObject::connect(actionDrop_All_results, SIGNAL(triggered()), btnDropAllResults, SLOT(click()));
+        QObject::connect(actionRemove, SIGNAL(triggered()), btnRemove, SLOT(click()));
+        QObject::connect(actionRefresh, SIGNAL(triggered()), btnRefresh, SLOT(click()));
 
         tabWidget->setCurrentIndex(0);
 
@@ -323,22 +327,23 @@ public:
 #endif // QT_NO_TOOLTIP
         actionOpen->setText(QApplication::translate("qt_testClass", "Open", 0));
         actionOpen->setShortcut(QApplication::translate("qt_testClass", "Ctrl+O", 0));
-        actionLoad_config->setText(QApplication::translate("qt_testClass", "Load config", 0));
         actionTrain->setText(QApplication::translate("qt_testClass", "Train", 0));
-        actionShow->setText(QApplication::translate("qt_testClass", "Show", 0));
-        actionShow_leaves->setText(QApplication::translate("qt_testClass", "Show leaves", 0));
         actionLoad_config_file->setText(QApplication::translate("qt_testClass", "Load config file", 0));
+        actionLoad_config_file->setShortcut(QApplication::translate("qt_testClass", "Ctrl+Q", 0));
         actionDetect->setText(QApplication::translate("qt_testClass", "Detect", 0));
+        actionDetect->setShortcut(QApplication::translate("qt_testClass", "Ctrl+D", 0));
         actionBatch_detect->setText(QApplication::translate("qt_testClass", "Batch detect", 0));
-        actionZoom_in->setText(QApplication::translate("qt_testClass", "Zoom in", 0));
-        actionZoom_out->setText(QApplication::translate("qt_testClass", "Zoom out", 0));
+        actionBatch_detect->setShortcut(QApplication::translate("qt_testClass", "Ctrl+B", 0));
         actionZoom_in_2->setText(QApplication::translate("qt_testClass", "Zoom in", 0));
         actionZoom_in_2->setShortcut(QApplication::translate("qt_testClass", "Ctrl++", 0));
         actionZoom_out_2->setText(QApplication::translate("qt_testClass", "Zoom out", 0));
         actionZoom_out_2->setShortcut(QApplication::translate("qt_testClass", "Ctrl+-", 0));
-        actionTest_local_max->setText(QApplication::translate("qt_testClass", "test local max", 0));
-        actionMean_shift->setText(QApplication::translate("qt_testClass", "mean shift", 0));
         actionLoad_test_images->setText(QApplication::translate("qt_testClass", "Load test images", 0));
+        actionRefresh->setText(QApplication::translate("qt_testClass", "Refresh", 0));
+        actionAdd_positive->setText(QApplication::translate("qt_testClass", "Add positive", 0));
+        actionAdd_negative->setText(QApplication::translate("qt_testClass", "Add negative", 0));
+        actionRemove->setText(QApplication::translate("qt_testClass", "Remove", 0));
+        actionDrop_All_results->setText(QApplication::translate("qt_testClass", "Drop All results", 0));
 #ifndef QT_NO_TOOLTIP
         btnAddPositive->setToolTip(QApplication::translate("qt_testClass", "Add positive example", 0));
 #endif // QT_NO_TOOLTIP

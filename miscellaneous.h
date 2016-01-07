@@ -28,6 +28,7 @@ public:
 	QList<cv::Rect> rects;
 	QList<QColor> colors;
 	bool processed;
+	float time;
 	Results():processed(false){}
 	void clear()
 	{
@@ -75,6 +76,7 @@ public:
 	cv::Point point;
 	int class_label;
 	float ratio;
+	float scale;
 
 	MaxPoint(){}
 	MaxPoint(int x, int y, float _pf, int _class_label) : class_label(_class_label), point(x,y), pf(_pf){}

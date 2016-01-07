@@ -405,7 +405,8 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	// Load image
 	cv::Mat img;
 	img = cv::imread(filename.c_str(),CV_LOAD_IMAGE_COLOR);
-	string short_name = getFilename(filename);
+	string short_name, ext;
+	getFilenameExt(filename, short_name, ext);
 	if(!img.data) {
 		string s ("Could not load image file: " + filename);
 		throw  string_exception(s);
@@ -422,7 +423,7 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 				
 			//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
 			// int k - scale, c - index of class
-			sprintf_s(buffer,"%s/%s_scale%d_%s",(configpath + outpath).c_str(), classes[c].c_str(), k, short_name.c_str());
+			sprintf_s(buffer,"%s/%s_scale%f_%s.%s",(configpath + outpath).c_str(), short_name.c_str(), scales[k], classes[c].c_str(), ext.c_str());
 			imwrite( buffer, vImgDetect[k][c] );
 
 			vImgDetect[k][c].release();
