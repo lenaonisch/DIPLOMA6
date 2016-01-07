@@ -63,7 +63,7 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 }
 
 // imgDetect - vector.size == num_of_classes
-void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios) {
+int CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios) {
 
 	//// extract features
 	//cv::Mat vImg;
@@ -76,6 +76,7 @@ void CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetec
 	//using namespace concurrency;
 
 	CRPatch::extractFeatureChannels(img, vImg_old);
+	int timer = clock();
 	int rows = size.height;
 	int cols = size.width;
 	//int sz[] = {rows,cols};
@@ -113,11 +114,6 @@ try {
 	int numclass2 = num_of_classes*2;
 	ratios = cv::Mat::zeros(size, CV_32SC(numclass2));
 
-/////////////must be commented
-	// get pointer to output image
-	//int stepDet = imgDetect.step1();
-	//int stepRatio = ratios.step1();
-////////////////////////////must be commented
 	int xoffset = width/2;
 	int yoffset = height/2;
 	
@@ -191,6 +187,8 @@ try {
 	
 	ptDetView.synchronize();
 	ptRatioView.synchronize();
+
+	timer = clock() - timer;
 	}
 	catch(runtime_exception& ex)
 
@@ -201,9 +199,11 @@ try {
 }
 
 	// release feature channels
-	//for(unsigned int c=0; c<vImg.size(); ++c)
+	for(unsigned int c=0; c<vImg_old.size(); ++c)
+		vImg_old[c].release();
 	vCVMerge.release();
 	
+	return timer;
 	//delete[] ptFCh;
 	//delete[] ptFCh_row;
 	//delete ptDet;
@@ -218,10 +218,11 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 	int cl2 = num_of_classes*2;
 	// [0] - summary time
 	// [1] - init. maps
-	// [2] - detectColor
-	// [3] - localMax function
-	// [4] - max. find other operations
-	// [5] - convert to Results
+	// [2] - detectColor voting only (GPU)
+	// [3] - detectColor total (with voting)
+	// [4] - localMax function
+	// [5] - max. find other operations
+	// [6] - convert to Results
 	double timers [10] = {0,0,0,0,0,0,0,0,0,0};
 	double* t_ptr = &timers[0];
 	int init_maps = 0, detecCol = 0, maxFind = 0, localmax = 0;
@@ -257,9 +258,9 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 
 			// detection
 			detecCol = clock();
-			detectColor(cLevel, scaled_size, tmps, ratios);
+			timers[2] += detectColor(cLevel, scaled_size, tmps, ratios);
 			detecCol = clock() - detecCol;
-			timers[2]+=detecCol;
+			timers[3] += detecCol;
 
 			int treshold = 150;
 
@@ -276,7 +277,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			for (int c = 0; c < num_of_classes; c++)
 				localMaxima(vImgDetect[i][c], cv::Size(width_aver[c]*scales[i], height_min[c]*scales[i]), maxs, c, treshold);
 			localmax = clock() - localmax;
-			timers[3] = localmax;
+			timers[4] = localmax;
 
 			maxFind = clock();
 			int step = ratios.step1();
@@ -293,7 +294,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			max_index = maxs.size();
 
 			maxFind = clock()-maxFind;
-			timers[4]+=maxFind;
+			timers[5]+=maxFind;
 
 			ratios.release();
 				
@@ -301,7 +302,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 		}
 
 		// convert to Results
-		timers[5] = clock();
+		timers[6] = clock();
 		for (int i = maxs.size()-1; i > 0; i--)
 		{
 			int cl = maxs[i].class_label;
@@ -327,7 +328,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 				result.rects.push_back(cv::Rect(maxs[j].point.x - w/2, maxs[j].point.y - h/2, w, h));
 			}
 		}
-		timers[5] = clock() - timers[5];
+		timers[6] = clock() - timers[6];
 
 		maxs.clear();
 		//timers[0] = (double)(clock() - timers[0])/CLOCKS_PER_SEC;
@@ -336,6 +337,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 		for (int i = 0; i<10; i++)
 			timers[i] /= CLOCKS_PER_SEC;
 	}
+	result.time = timers[0];
 	return t_ptr;
 }
 

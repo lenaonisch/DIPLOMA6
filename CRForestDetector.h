@@ -100,7 +100,8 @@ public:
 	//float** leafs;
 	//unsigned int** leafpointer;
 private:
-	void detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios);
+	// returns time
+	int detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios); 
 	const CRForest* crForest;
 	int width;
 	int height;

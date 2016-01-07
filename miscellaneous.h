@@ -28,6 +28,7 @@ public:
 	QList<cv::Rect> rects;
 	QList<QColor> colors;
 	bool processed;
+	float time;
 	Results():processed(false){}
 	void clear()
 	{

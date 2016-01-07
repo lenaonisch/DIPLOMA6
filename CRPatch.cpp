@@ -8,6 +8,24 @@
 
 using namespace std;
 using namespace cv;
+//#include <amp_math.h>
+
+//namespace AMP_char
+//{
+//	inline float copysign(float x, float y) restrict(cpu, amp)
+//	{
+//		if (y < 0)
+//		{
+//			if (x<0)
+//				return x;
+//			else
+//				return -x;
+//		}
+//		if (x<0)
+//			return x*-1;
+//		return x;
+//	}
+//}
 
 void CRPatch::extractPatches(Mat img, unsigned int n, int label, cv::Point * center) {
 	// extract features
@@ -122,6 +140,36 @@ void CRPatch::extractFeatureChannels(cv::Mat img, std::vector<cv::Mat>& vImg) {
 		}
 		I_xptr+=stepx; I_yptr+=stepy; ptrImg2+=step2;
 	}
+	//////////////////////////////////////////
+	//int timer = clock();
+	//using namespace concurrency;
+	//concurrency::extent<1> eInput(size.height*size.width);
+	//array_view<const float, 1> input_I_x(eInput, (float*)I_x.data);
+	//array_view<const float, 1> input_I_y(eInput, (float*)I_y.data);
+	//concurrency::extent<1> eImg1((size.height*size.width+3)/4);
+	//array_view<unsigned int, 1> vImg1View (eImg1, reinterpret_cast<unsigned int*>(vImg[1].data));
+	//array_view<unsigned int, 1> vImg2View (eImg1, reinterpret_cast<unsigned int*>(vImg[2].data));
+	//vImg1View.discard_data();
+	//vImg2View.discard_data();
+	//parallel_for_each(eInput, [=](index<1>idx) restrict (amp) //idx - normal indexes!
+	//{
+	//	float x = input_I_x[idx];
+	//	float y = input_I_y[idx];
+
+	//	float tx = x + AMP_char::copysign(0.000001f, x);
+	//	unsigned int ch = ( fast_math::atan(y/tx)+3.14159265f/2.0f ) * 80;
+	//	//vImg1View
+	//	atomic_fetch_xor(&vImg1View[idx[0] >> 2], vImg1View[idx[0] >> 2] & (0xFF << ((idx[0] & 0x3) << 3)));
+	//	atomic_fetch_xor(&vImg1View[idx[0] >> 2], (ch & 0xFF) << ((idx[0] & 0x3) << 3));
+	//	//vImg2View
+	//	ch = fast_math::sqrt(x*x + y*y);
+	//	atomic_fetch_xor(&vImg2View[idx[0] >> 2], vImg2View[idx[0] >> 2] & (0xFF << ((idx[0] & 0x3) << 3)));
+	//	atomic_fetch_xor(&vImg2View[idx[0] >> 2], (ch & 0xFF) << ((idx[0] & 0x3) << 3));
+	//	
+	//});
+	//vImg1View.synchronize();
+	//vImg2View.synchronize();
+	//timer = clock() - timer;
 
 	// 9-bin HOG feature stored at vImg[7] - vImg[15] 
 	hog.extractOBin(vImg[1], vImg[2], vImg, 7);
