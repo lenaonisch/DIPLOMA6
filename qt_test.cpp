@@ -95,9 +95,9 @@ void qt_test::DisplayPositiveFiles()
 	QList<QTreeWidgetItem *> items;
 	for (int i = 0; i < filepaths.size(); ++i)
 	{
-		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(gall_forest_app.getFilename(filepaths[i]).c_str())));
-		next->setToolTip(0, QString(filepaths[i].c_str()));
 		Results* res = &positive[filepaths[i]];
+		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(gall_forest_app.getFilename(filepaths[i]).c_str()+QString("   %1").arg(res->time))));
+		next->setToolTip(0, QString(filepaths[i].c_str()));
 		for (int j = 0;j < res->classes.size(); j++)
 		{
 			AddPositiveRectToTree(next, &res->rects[j], res->classes[j]);

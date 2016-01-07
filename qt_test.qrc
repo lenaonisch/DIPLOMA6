@@ -1,4 +1,12 @@
 <RCC>
-    <qresource prefix="qt_test">
+    <qresource prefix="/qt_test">
+        <file>GeneratedFiles/bin.png</file>
+        <file>GeneratedFiles/delete.png</file>
+        <file>GeneratedFiles/icon.bmp</file>
+        <file>GeneratedFiles/minus.png</file>
+        <file>GeneratedFiles/open.png</file>
+        <file>GeneratedFiles/plus.png</file>
+        <file>GeneratedFiles/refresh.png</file>
+        <file>GeneratedFiles/Save.ico</file>
     </qresource>
 </RCC>
