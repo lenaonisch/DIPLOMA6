@@ -27,6 +27,10 @@ public:
 	~CRForest() {
 		for(std::vector<CRTree*>::iterator it = vTrees.begin(); it != vTrees.end(); ++it) delete *it;
 		vTrees.clear();
+		amp_treetable.release();
+		amp_treepointer.release();
+		amp_leafs.release();
+		amp_leafpointer.release();
 	}
 
 	// Set/Get functions
