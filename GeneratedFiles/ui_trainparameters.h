@@ -32,12 +32,12 @@ public:
     QLabel *label;
     QCheckBox *cbUseFluct;
     QGroupBox *grFluctuation;
-    QCheckBox *cbMove;
-    QCheckBox *cbNoise;
+    QCheckBox *cbMoveHor;
     QCheckBox *cbResize;
     QCheckBox *cbRotate;
     QCheckBox *cbFlipHor;
     QCheckBox *cbFlipVertic;
+    QCheckBox *cbMoveVert;
     QLabel *label_2;
     QSpinBox *edtTrainPercent;
     QLabel *label_3;
@@ -48,7 +48,7 @@ public:
     {
         if (TrainParameters->objectName().isEmpty())
             TrainParameters->setObjectName(QStringLiteral("TrainParameters"));
-        TrainParameters->resize(400, 245);
+        TrainParameters->resize(400, 232);
         QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
@@ -75,14 +75,10 @@ public:
         grFluctuation->setObjectName(QStringLiteral("grFluctuation"));
         grFluctuation->setEnabled(false);
         grFluctuation->setGeometry(QRect(210, 30, 171, 151));
-        cbMove = new QCheckBox(grFluctuation);
-        cbMove->setObjectName(QStringLiteral("cbMove"));
-        cbMove->setGeometry(QRect(20, 60, 70, 17));
-        cbMove->setChecked(true);
-        cbNoise = new QCheckBox(grFluctuation);
-        cbNoise->setObjectName(QStringLiteral("cbNoise"));
-        cbNoise->setGeometry(QRect(20, 80, 70, 17));
-        cbNoise->setChecked(false);
+        cbMoveHor = new QCheckBox(grFluctuation);
+        cbMoveHor->setObjectName(QStringLiteral("cbMoveHor"));
+        cbMoveHor->setGeometry(QRect(20, 60, 121, 17));
+        cbMoveHor->setChecked(true);
         cbResize = new QCheckBox(grFluctuation);
         cbResize->setObjectName(QStringLiteral("cbResize"));
         cbResize->setGeometry(QRect(20, 20, 70, 17));
@@ -99,6 +95,10 @@ public:
         cbFlipVertic->setObjectName(QStringLiteral("cbFlipVertic"));
         cbFlipVertic->setGeometry(QRect(20, 120, 111, 17));
         cbFlipVertic->setChecked(false);
+        cbMoveVert = new QCheckBox(grFluctuation);
+        cbMoveVert->setObjectName(QStringLiteral("cbMoveVert"));
+        cbMoveVert->setGeometry(QRect(20, 80, 121, 17));
+        cbMoveVert->setChecked(true);
         label_2 = new QLabel(TrainParameters);
         label_2->setObjectName(QStringLiteral("label_2"));
         label_2->setGeometry(QRect(20, 60, 71, 16));
@@ -133,12 +133,12 @@ public:
         label->setText(QApplication::translate("TrainParameters", "Tree count", 0));
         cbUseFluct->setText(QApplication::translate("TrainParameters", "Use fluctuations", 0));
         grFluctuation->setTitle(QApplication::translate("TrainParameters", "Fluctuations", 0));
-        cbMove->setText(QApplication::translate("TrainParameters", "Move", 0));
-        cbNoise->setText(QApplication::translate("TrainParameters", "Noise", 0));
+        cbMoveHor->setText(QApplication::translate("TrainParameters", "Move horizontally", 0));
         cbResize->setText(QApplication::translate("TrainParameters", "Resize", 0));
         cbRotate->setText(QApplication::translate("TrainParameters", "Rotate", 0));
         cbFlipHor->setText(QApplication::translate("TrainParameters", "Flip horizontally", 0));
         cbFlipVertic->setText(QApplication::translate("TrainParameters", "Flip vertically", 0));
+        cbMoveVert->setText(QApplication::translate("TrainParameters", "Move vertically", 0));
         label_2->setText(QApplication::translate("TrainParameters", "Train percent", 0));
 #ifndef QT_NO_TOOLTIP
         edtTrainPercent->setToolTip(QApplication::translate("TrainParameters", "% of positive examples that is used for training. Rest is used for validation", 0));
