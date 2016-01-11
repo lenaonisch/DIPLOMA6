@@ -23,8 +23,7 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 						  array_view<const int, 2> treetableView,
 						  int channels, int step) restrict (amp, cpu)
 {
-	int tree_count = treetableView.extent[0];
-	
+	int x,y;
 	int node_index = 0;
 	auto treenode = treetableView.section(idx[0], node_index*7, 1, 7);
 	while(treenode[index<2> (0, 0)] == -1)
@@ -35,12 +34,12 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 		
 		// get pixel values 
 		int channel = treenode[index<2> (0, 5)];
-		int x1 = idx[2]+treenode[index<2> (0, 1)];
-		int y1 = idx[1]+treenode[index<2> (0, 2)];
-		int x2 = idx[2]+treenode[index<2> (0, 3)];
-		int y2 = idx[1]+treenode[index<2> (0, 4)];
-		int p1 = read_uchar(vImgView, index<3>(y1,x1,channel), step, channels);
-		int p2 = read_uchar(vImgView, index<3>(y2,x2,channel), step, channels);
+		x = idx[2]+treenode[index<2> (0, 1)];
+		y = idx[1]+treenode[index<2> (0, 2)];
+		int p1 = read_uchar(vImgView, index<3>(y,x,channel), step, channels);
+		x = idx[2]+treenode[index<2> (0, 3)];
+		y = idx[1]+treenode[index<2> (0, 4)];
+		int p2 = read_uchar(vImgView, index<3>(y,x,channel), step, channels);
 		// test
 		bool test = (p1 - p2) >= treenode[index<2> (0, 6)];
 
@@ -48,8 +47,6 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 		// increment node/pointer by node_id + 1 + test
 		int incr = node_index+1+test;
 		node_index += incr; //after this operation node contains node_id
-		if (node_index<0)
-			return 0;
 		treenode =  treetableView.section(idx[0], node_index*7, 1, 7);
 	}
 	return treenode[index<2> (0, 0)];
@@ -139,45 +136,45 @@ try {
 	parallel_for_each(/*av, */e_main, [=](index<3>idx) restrict (amp)
 	{
 		int leaf_index = regression_leaf_index(vImgView, idx, treetableView, channels, step);
-		if (leaf_index != 0)
+		/*if (leaf_index != 0)
+		{*/
+		auto leaf = GetLeafByID(leafsView, leafpointerView, index<2>(idx[0], leaf_index));
+		for (int c = 0; c < num_of_classes_; c++)
 		{
-			auto leaf = GetLeafByID(leafsView, leafpointerView, index<2>(idx[0], leaf_index));
-			for (int c = 0; c < num_of_classes_; c++)
-			{
-			// To speed up the voting, one can vote only for patches 
-				// with a probability for foreground > 0.5
-				// 
-			/*if ((*itL)->pfg[c] > prob_threshold)
-				{*/
-					// voting weight for leaf 
-					int ind = 2*num_of_classes_; // indexation from zero, so formula isn't (2*num_of_classes + 1)
-					int cntr_size = leaf[index<2>(0, ind)];
-					for (int z = 1; z < num_of_classes_; z++)
-					{
-						ind += cntr_size*2+1;
-						cntr_size = leaf[index<2>(0, ind)];
-					}
-					int w = leaf[index<2>(0, 2*c)]/float(cntr_size * tree_count);
-					int r = leaf[index<2>(0, 2*c+1)];
+		// To speed up the voting, one can vote only for patches 
+			// with a probability for foreground > 0.5
+			// 
+		/*if ((*itL)->pfg[c] > prob_threshold)
+			{*/
+				// voting weight for leaf 
+				int ind = 2*num_of_classes_; // indexation from zero, so formula isn't (2*num_of_classes + 1)
+				int cntr_size = leaf[index<2>(0, ind)];
+				for (int z = 1; z < num_of_classes_; z++)
+				{
+					ind += cntr_size*2+1;
+					cntr_size = leaf[index<2>(0, ind)];
+				}
+				int w = leaf[index<2>(0, 2*c)]/float(cntr_size * tree_count);
+				int r = leaf[index<2>(0, 2*c+1)];
 
-					for (int point = 0; point < cntr_size; point++)
+				for (int point = 0; point < cntr_size; point++)
+				{
+					int x_ = int(idx[2] + xoffset - leaf[index<2>(0, ++ind)] + 0.5f);
+					int y_ = idx[1] + yoffset - leaf[index<2>(0, ++ind)];
+					if(y_ >= 0 && y_ < rows && x_ >= 0 && x_ < cols)
 					{
-						int x_ = int(idx[2] + xoffset - leaf[index<2>(0, ++ind)] + 0.5f);
-						int y_ = idx[1] + yoffset - leaf[index<2>(0, ++ind)];
-						if(y_ >= 0 && y_ < rows && x_ >= 0 && x_ < cols)
-						{
-							//atomic_fetch_add(&ptDetView[index<3>(y_, x_, c)], w);
-							ptDetView[index<3>(y_, x_, c)] += w;
-							int t = ptRatioView[index<3>(y_, x_, c)];
-							// get first short: (t >> 16) & 0x0000FFFF
-							//get second short: t & 0x0000FFFF
-							// int combineddata = ((first<<16) | ((second) & 0xffff));
-							ptRatioView[index<3>(y_, x_, c)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
-						}
+						//atomic_fetch_add(&ptDetView[index<3>(y_, x_, c)], w);
+						ptDetView[index<3>(y_, x_, c)] += w;
+						int t = ptRatioView[index<3>(y_, x_, c)];
+						// get first short: (t >> 16) & 0x0000FFFF
+						//get second short: t & 0x0000FFFF
+						// int combineddata = ((first<<16) | ((second) & 0xffff));
+						ptRatioView[index<3>(y_, x_, c)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
 					}
-				//} // end if
-			}
-		}	
+				}
+			//} // end if
+		}
+		//}	
 	});
 	
 	ptDetView.synchronize();
