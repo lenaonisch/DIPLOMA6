@@ -347,7 +347,7 @@ void GALL_app::loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv:
 	if(in.is_open()) {
 		in >> size;
 		in >> numop;
-		cout << "Load Train Neg Examples: " << size << " - " << numop << endl;
+		//cout << "Load Train Neg Examples: " << size << " - " << numop << endl;
 
 		vFilenames.resize(size);
 		if(numop>0)
@@ -368,9 +368,7 @@ void GALL_app::loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv:
 				vBBox[i].height -= vBBox[i].y;
 
 				if(vBBox[i].width<p_width || vBBox[i].height<p_height) {
-				  cout << "Width or height are too small" << endl; 
-				  cout << vFilenames[i] << endl;
-				  exit(-1); 
+					throw string_exception("Width or height are too small " + vFilenames[i]);
 				}
 			}	
 		}
@@ -424,7 +422,7 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 			//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
 			// int k - scale, c - index of class
 			sprintf_s(buffer,"%s/%s_scale%f_%s.%s",(configpath + outpath).c_str(), short_name.c_str(), scales[k], classes[c].c_str(), ext.c_str());
-			imwrite( buffer, vImgDetect[k][c] );
+			cv::imwrite( buffer, vImgDetect[k][c] );
 
 			vImgDetect[k][c].release();
 				
@@ -433,6 +431,106 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 
 	// Release image
 	img.release();
+}
+
+void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output, float dx)
+{
+	int count = 1;
+	bool hor = false;
+	for (int i = 0; i<6; i++)
+	{
+		switch (i)
+		{ 
+			case 4:
+				if (fluctparam[i]){
+					hor = true;
+					count*=2;
+				}
+				break;
+			case 5:
+				if (fluctparam[i]){
+					if (hor)
+						count += count/2;
+					else
+						count*=2;
+				}
+				break;
+			default:
+				if (fluctparam[i])
+					count += 2;
+				break;
+		}
+	}
+	
+	output.resize(count);
+	int k = 0;
+	cv::Mat temp;
+	cv::resize(source, temp, cv::Size(), dx, dx);
+	bbox.height *= dx;
+	bbox.width *= dx;
+	bbox.x *= dx;
+	bbox.y *= dx; 
+	output[k++] = temp(bbox);
+
+	if (fluctparam[0]) // resize
+	{
+		cv::resize(output[0], output[k++], cv::Size(), 0.95f, 0.95f);
+		cv::resize(output[0], output[k++], cv::Size(), 1.05f, 1.05f);
+	}
+	if (fluctparam[1]) // rotate
+	{
+		cv::Point2f center(bbox.x+bbox.width/2.0f, bbox.y+bbox.height/2.0f);
+		cv::Mat rot1 = cv::getRotationMatrix2D(center, 5, 1.0);
+		cv::Mat rot2 = cv::getRotationMatrix2D(center, -5, 1.0);
+		// adjust transformation matrix
+		rot1.at<double>(0,2) += bbox.width/2.0 - center.x;
+		rot1.at<double>(1,2) += bbox.height/2.0 - center.y;
+		rot2.at<double>(0,2) += bbox.width/2.0 - center.x;
+		rot2.at<double>(1,2) += bbox.height/2.0 - center.y;
+		
+		cv::warpAffine(temp, output[k++], rot1, bbox.size());
+		cv::warpAffine(temp, output[k++], rot2, bbox.size());
+
+		rot1.release();
+		rot2.release();
+	}
+
+	if (fluctparam[2]) // move hor
+	{
+		cv::Rect r = bbox;		
+		r.x -= 0.05*bbox.width;
+		if (r.x > 0)
+			output[k++] = temp(r);
+		r.x = bbox.x + 0.05*bbox.width;
+		if (r.x + bbox.width < temp.cols)
+			output[k++] = temp(r);
+	}
+
+	if (fluctparam[3]) // move vert
+	{
+		cv::Rect r = bbox;
+		r.y -= 0.05*bbox.height;
+		if (r.y > 0)
+			output[k++] = temp(r);
+		r.y = bbox.y + 0.05*bbox.height;
+		if (r.y + bbox.height < temp.rows)
+			output[k++] = temp(r);
+	}
+
+	if (fluctparam[4]) // flip hor.
+	{
+		for (int i = 0; i<k;i++)
+			cv::flip(output[i], output[k+i], 1);
+	}
+	if (fluctparam[5]) // flip vert.
+	{
+		int ptr = fluctparam[4]? k*2 : k;
+		for (int i = 0; i<k;i++)
+			cv::flip(output[i], output[ptr+i], 0);
+	}
+	int i = output.size()-1;
+	while (output[i--].data == NULL)
+		output.pop_back();
 }
 
 // Extract patches from training data
@@ -453,7 +551,7 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	vCenter.resize(vFilenames.size());
 	for(int i=0; i<(int)vFilenames.size(); ++i) 
 	{
-	  if(i%50==0) cout << i << " " << flush;
+	  //if(i%50==0) cout << i << " " << flush;
 
 	  if(subsamples_pos <= 0 || (int)vFilenames.size()<=subsamples_pos || (cvRandReal(pRNG)*double(vFilenames.size()) < double(subsamples_pos)) ) 
 	  {
@@ -473,16 +571,36 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 			vCenter[i].y = to_extract.rows/2;
 			if (to_extract.rows < height_min[vClassNums[i]])
 				height_min[vClassNums[i]] = to_extract.rows;
-			cv::imwrite((configpath + train_rescaled_cropped_path + "/" + vFilenames[i]).c_str(), to_extract);
 
-			Train.extractPatches(to_extract, samples_pos, vClassNums[i], &vCenter[i]); 
-
+			if (fluctparam != NULL)
+			{
+				vector<cv::Mat> output;
+				char buffer[200];
+				Fluctuate(img, vBBox[i], output, dx);
+				bool write = true;
+				for (int z = 0; z<output.size(); z++)
+				{
+					if (write){
+						string short_name, ext;
+						getFilenameExt(vFilenames[i], short_name, ext);
+						sprintf_s(buffer,"%s_%d.%s",(configpath + train_rescaled_cropped_path + "/" + short_name).c_str(), z, ext.c_str());
+						cv::imwrite(buffer, output[z]);
+					}
+					Train.extractPatches(output[z], samples_pos, vClassNums[i], &vCenter[i]);
+					output[z].release();
+				}
+			}
+			else
+			{
+				cv::imwrite((configpath + train_rescaled_cropped_path + "/" + vFilenames[i]).c_str(), to_extract);
+				Train.extractPatches(to_extract, samples_pos, vClassNums[i], &vCenter[i]); 
+			}
 			// Release image
 			img.release();
 			to_extract.release();
 	  }		
 	}
-	cout << endl;
+	//cout << endl;
 
 	// load negative file list
 	loadTrainNegFile(vFilenames,  vBBox);
@@ -490,7 +608,7 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	// load negative images and extract patches
 	for(int i=0; i<(int)vFilenames.size(); ++i) {
 
-		if(i%50==0) cout << i << " " << flush;
+		//if(i%50==0) cout << i << " " << flush;
 
 		if(subsamples_neg <= 0 || (int)vFilenames.size()<=subsamples_neg || ( cvRandReal(pRNG)*double(vFilenames.size()) < double(subsamples_neg) ) ) {
 

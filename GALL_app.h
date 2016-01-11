@@ -100,7 +100,7 @@ public:
 		}
 		in_class.close();
 	}
-
+	void Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output, float dx);
 private:
 	void replace(string& str, string what, string to_what)
 	{
