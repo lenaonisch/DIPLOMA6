@@ -24,10 +24,10 @@ public:
 
 			param[0] = ui->cbResize->isChecked();
 			param[1] = ui->cbRotate->isChecked();
-			param[2] = ui->cbMove->isChecked();
-			param[3] = ui->cbNoise->isChecked();
-			param[4] = ui->cbFlipVertic->isChecked();
-			param[5] = ui->cbFlipHor->isChecked();
+            param[2] = ui->cbMoveHor->isChecked();
+            param[3] = ui->cbMoveVert->isChecked();
+            param[4] = ui->cbFlipHor->isChecked();
+            param[5] = ui->cbFlipVertic->isChecked();
 			return param;
 		}
 		else

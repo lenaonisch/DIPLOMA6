@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>245</height>
+    <height>232</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -95,36 +95,20 @@
    <property name="title">
     <string>Fluctuations</string>
    </property>
-   <widget class="QCheckBox" name="cbMove">
+   <widget class="QCheckBox" name="cbMoveHor">
     <property name="geometry">
      <rect>
       <x>20</x>
       <y>60</y>
-      <width>70</width>
+      <width>121</width>
       <height>17</height>
      </rect>
     </property>
     <property name="text">
-     <string>Move</string>
+     <string>Move horizontally</string>
     </property>
     <property name="checked">
      <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="cbNoise">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>80</y>
-      <width>70</width>
-      <height>17</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Noise</string>
-    </property>
-    <property name="checked">
-     <bool>false</bool>
     </property>
    </widget>
    <widget class="QCheckBox" name="cbResize">
@@ -189,6 +173,22 @@
     </property>
     <property name="checked">
      <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="cbMoveVert">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>80</y>
+      <width>121</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Move vertically</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
