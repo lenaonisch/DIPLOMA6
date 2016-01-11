@@ -14,14 +14,8 @@ inline array_view<const int,2> GetLeafByID(array_view<const int, 2> leafs,
 									array_view<const int,2> leafpointer, 
 									index<2> tree_ID, int num_of_classes_) restrict (amp, cpu)
 {
-	int len = 2*num_of_classes_;
-	//int* ptr = amp_leafs + tree * amp_leafs_step + (*(amp_leafpointer + tree*amp_leafpointer_step + ID));
-	int leaf_index = leafpointer[tree_ID];
-	len += leafs[index<2>(tree_ID[0], leaf_index + len)]*2 + 1;
-	for (int i = 1; i < num_of_classes_; i++)
-		len += leafs[index<2>(tree_ID[0], leaf_index + len)]*2 + 1;
-	
-	return leafs.section(tree_ID[0], leaf_index, 1, len);
+	int nxt = leafpointer[index<2>(tree_ID[0], tree_ID[1]+1)];
+	return leafs.section(tree_ID[0], leafpointer[tree_ID], 1, nxt - leafpointer[tree_ID]);
 }
 
 inline int regression_leaf_index(array_view<unsigned int, 1> vImgView, 
@@ -146,7 +140,7 @@ try {
 	concurrency::extent<3> e_main(tree_count, img.rows-height, img.cols-width);
 	int threads = tree_count*img.rows-height*img.cols-width;
 	//accelerator_view av = accelerator(accelerator::direct3d_warp).create_view(queuing_mode_immediate); // this solution slows in 2 times!
-	parallel_for_each(/*av,*/ e_main, [=](index<3>idx) restrict (amp)
+	parallel_for_each(/*av, */e_main, [=](index<3>idx) restrict (amp)
 	{
 		int leaf_index = regression_leaf_index(vImgView, idx, treetableView, treepointerView, channels, step);
 		if (leaf_index != 0)

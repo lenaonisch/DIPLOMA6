@@ -593,4 +593,5 @@ void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& treepo
 			i += (3 + c_size * 2);
 		}
 	}
+	*pointer_ptr++ = i;
 }

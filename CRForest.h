@@ -126,7 +126,7 @@ inline void CRForest::loadForest(const char* filename) {
 
 	amp_leafs.create (trees, 2 * vTrees[0]->center_count + max_num_leaf * num_of_classes * 3, CV_32SC1); 
 	amp_leafs_step = amp_leafs.step1(); 
-	amp_leafpointer.create (trees, max_num_leaf, CV_32SC1);
+	amp_leafpointer.create (trees, max_num_leaf+1, CV_32SC1); // +1 - for last position in amp_leafs array
 	amp_leafpointer_step = amp_leafpointer.step1();
 	for(unsigned int i=0; i < vTrees.size(); ++i)
 	{
