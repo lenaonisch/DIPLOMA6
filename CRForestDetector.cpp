@@ -12,7 +12,7 @@ using namespace concurrency;
 // returns ONE-dimentional array with leaf data
 inline array_view<const int,2> GetLeafByID(array_view<const int, 2> leafs, 
 									array_view<const int,2> leafpointer, 
-									index<2> tree_ID, int num_of_classes_) restrict (amp, cpu)
+									index<2> tree_ID) restrict (amp, cpu)
 {
 	int nxt = leafpointer[index<2>(tree_ID[0], tree_ID[1]+1)];
 	return leafs.section(tree_ID[0], leafpointer[tree_ID], 1, nxt - leafpointer[tree_ID]);
@@ -21,13 +21,12 @@ inline array_view<const int,2> GetLeafByID(array_view<const int, 2> leafs,
 inline int regression_leaf_index(array_view<unsigned int, 1> vImgView, 
 						  index<3>idx,
 						  array_view<const int, 2> treetableView,
-						  array_view<const int, 2> treepointerView,
 						  int channels, int step) restrict (amp, cpu)
 {
 	int tree_count = treetableView.extent[0];
 	
 	int node_index = 0;
-	auto treenode = treetableView.section(idx[0], treepointerView[index<2>(idx[0], node_index)]*7, 1, 7);
+	auto treenode = treetableView.section(idx[0], node_index*7, 1, 7);
 	while(treenode[index<2> (0, 0)] == -1)
 	{
 		// binary test 0 - left, 1 - right
@@ -49,9 +48,9 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 		// increment node/pointer by node_id + 1 + test
 		int incr = node_index+1+test;
 		node_index += incr; //after this operation node contains node_id
-		if (treepointerView[index<2>(idx[0], node_index)]<0)
+		if (node_index<0)
 			return 0;
-		treenode =  treetableView.section(idx[0], treepointerView[index<2>(idx[0], node_index)]*7, 1, 7);
+		treenode =  treetableView.section(idx[0], node_index*7, 1, 7);
 	}
 	return treenode[index<2> (0, 0)];
 }
@@ -124,11 +123,8 @@ try {
 	//ptRatioView.discard_data();
 
 	// treetable
-	concurrency::extent<2> e_treetable(crForest->vTrees.size(), crForest->max_treetable_len*7);
+	concurrency::extent<2> e_treetable(crForest->vTrees.size(), crForest->amp_treetable.cols);
 	array_view<const int, 2> treetableView(e_treetable, (int*)crForest->amp_treetable.data);
-	// treepointer
-	concurrency::extent<2> e_treepointer(crForest->vTrees.size(), crForest->amp_treepointer.cols);
-	array_view<const int, 2> treepointerView(e_treepointer, (int*)crForest->amp_treepointer.data);
 	// leafs
 	concurrency::extent<2> e_leafs(crForest->vTrees.size(), crForest->amp_leafs.cols);
 	array_view<const int, 2> leafsView(e_leafs, (int*)crForest->amp_leafs.data);
@@ -142,10 +138,10 @@ try {
 	//accelerator_view av = accelerator(accelerator::direct3d_warp).create_view(queuing_mode_immediate); // this solution slows in 2 times!
 	parallel_for_each(/*av, */e_main, [=](index<3>idx) restrict (amp)
 	{
-		int leaf_index = regression_leaf_index(vImgView, idx, treetableView, treepointerView, channels, step);
+		int leaf_index = regression_leaf_index(vImgView, idx, treetableView, channels, step);
 		if (leaf_index != 0)
 		{
-			auto leaf = GetLeafByID(leafsView, leafpointerView, index<2>(idx[0], leaf_index), num_of_classes_);
+			auto leaf = GetLeafByID(leafsView, leafpointerView, index<2>(idx[0], leaf_index));
 			for (int c = 0; c < num_of_classes_; c++)
 			{
 			// To speed up the voting, one can vote only for patches 

@@ -98,7 +98,7 @@ public:
 	//unsigned int* amp_leafpointer;
 	int center_count;
 
-	void ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& treepointer, cv::Mat& leafs, cv::Mat& leafpointer);
+	void ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& leafs, cv::Mat& leafpointer);
 private: 
 
 	// Private functions for training

@@ -550,27 +550,12 @@ void LeafNode::show(int delay, int width, int height) {
 	}
 }
 
-void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& treepointer, cv::Mat& leafs, cv::Mat& leafpointer)
+void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& leafs, cv::Mat& leafpointer)
 {
 	int* pnode = this->treetable;
 	int* table_ = (int*)treetable.data + treetable.step1()*row;
-	unsigned int* ind = (unsigned int*)treepointer.data + treepointer.step1()*row;
-	int not_empty = 0;
-	for (int i = 0; i < num_nodes; i++, pnode+=7)
-	{
-		if (pnode[0]!=0)
-		{
-			ind[i] = not_empty++;
-			for (int k = 0; k < 7; k++, table_++)
-				table_[0] = pnode[k];
-		}
-	}
-
-	//leafs
-	//float* amp_leafs;
-	//unsigned int* amp_leafpointer;
-	//amp_leafpointer = new unsigned int[num_leaf];
-	//amp_leafs = new int[2*center_count+num_leaf*num_of_classes*3];
+	for (int i = 0; i < num_nodes*7; i++)
+		*table_++ = *pnode++;
 
 	int * ptr = (int*)leafs.data + leafs.step1()*row;
 	int * pointer_ptr = (int*)leafpointer.data + leafpointer.step1()*row;

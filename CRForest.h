@@ -28,7 +28,7 @@ public:
 		for(std::vector<CRTree*>::iterator it = vTrees.begin(); it != vTrees.end(); ++it) delete *it;
 		vTrees.clear();
 		amp_treetable.release();
-		amp_treepointer.release();
+		//amp_treepointer.release();
 		amp_leafs.release();
 		amp_leafpointer.release();
 	}
@@ -58,8 +58,6 @@ public:
 	cv::Mat amp_treetable; //size: num_of_trees * max.size of treetable
 	int max_treetable_len;
 	int amp_treetable_step1;
-	cv::Mat amp_treepointer;
-	int amp_treepointer_step1;
 
 	cv::Mat amp_leafs;
 	int amp_leafs_step;
@@ -119,10 +117,8 @@ inline void CRForest::loadForest(const char* filename) {
 			max_num_leaf = vTrees[i]->num_leaf;
 	}
 
-	amp_treetable.create (trees, max_treetable_len*7, CV_32SC1);
+	amp_treetable.create (trees, vTrees[0]->num_nodes*7, CV_32SC1);
 	amp_treetable_step1 = amp_treetable.step1();
-	amp_treepointer.create (trees, vTrees[0]->num_nodes, CV_32SC1);
-	amp_treepointer_step1 = amp_treepointer.step1();
 
 	amp_leafs.create (trees, 2 * vTrees[0]->center_count + max_num_leaf * num_of_classes * 3, CV_32SC1); 
 	amp_leafs_step = amp_leafs.step1(); 
@@ -130,6 +126,6 @@ inline void CRForest::loadForest(const char* filename) {
 	amp_leafpointer_step = amp_leafpointer.step1();
 	for(unsigned int i=0; i < vTrees.size(); ++i)
 	{
-		vTrees[i]->ConvertTreeForPointers(i, amp_treetable, amp_treepointer, amp_leafs, amp_leafpointer);
+		vTrees[i]->ConvertTreeForPointers(i, amp_treetable, amp_leafs, amp_leafpointer);
 	}
 }
