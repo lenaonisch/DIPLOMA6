@@ -122,63 +122,55 @@ try {
 	// treetable
 	concurrency::extent<2> e_treetable(crForest->vTrees.size(), crForest->amp_treetable.cols);
 	array_view<const int, 2> treetableView(e_treetable, (int*)crForest->amp_treetable.data);
-	// leafs
-	concurrency::extent<2> e_leafs(crForest->vTrees.size(), crForest->amp_leafs.cols);
-	array_view<const int, 2> leafsView(e_leafs, (int*)crForest->amp_leafs.data);
-	// leafpointer
-	concurrency::extent<2> e_leafpointer(crForest->vTrees.size(), crForest->amp_leafpointer.cols);
-	array_view<const int, 2> leafpointerView(e_leafpointer, (int*)crForest->amp_leafpointer.data);
+	
 
 	int tree_count = crForest->vTrees.size();
 	concurrency::extent<3> e_main(tree_count, img.rows-height, img.cols-width);
 	int threads = tree_count*img.rows-height*img.cols-width;
-	//accelerator_view av = accelerator(accelerator::direct3d_warp).create_view(queuing_mode_immediate); // this solution slows in 2 times!
-	parallel_for_each(/*av, */e_main, [=](index<3>idx) restrict (amp)
+	for (int c = 0; c < num_of_classes_; c++)
 	{
-		int leaf_index = regression_leaf_index(vImgView, idx, treetableView, channels, step);
-		/*if (leaf_index != 0)
-		{*/
-		auto leaf = GetLeafByID(leafsView, leafpointerView, index<2>(idx[0], leaf_index));
-		for (int c = 0; c < num_of_classes_; c++)
+		// leafs
+		concurrency::extent<2> e_leafs(crForest->vTrees.size(), crForest->amp_leafs[c].cols);
+		array_view<const int, 2> leafsView(e_leafs, (int*)crForest->amp_leafs[c].data);
+		// leafpointer
+		concurrency::extent<2> e_leafpointer(crForest->vTrees.size(), crForest->amp_leafpointer[c].cols);
+		array_view<const int, 2> leafpointerView(e_leafpointer, (int*)crForest->amp_leafpointer[c].data);
+		//accelerator_view av = accelerator(accelerator::direct3d_warp).create_view(queuing_mode_immediate); // this solution slows in 2 times!
+		parallel_for_each(/*av, */e_main, [=](index<3>idx) restrict (amp)
 		{
-		// To speed up the voting, one can vote only for patches 
-			// with a probability for foreground > 0.5
-			// 
-		/*if ((*itL)->pfg[c] > prob_threshold)
-			{*/
-				// voting weight for leaf 
-				int ind = 2*num_of_classes_; // indexation from zero, so formula isn't (2*num_of_classes + 1)
-				int cntr_size = leaf[index<2>(0, ind)];
-				for (int z = 1; z < num_of_classes_; z++)
-				{
-					ind += cntr_size*2+1;
-					cntr_size = leaf[index<2>(0, ind)];
-				}
-				int w = leaf[index<2>(0, 2*c)]/float(cntr_size * tree_count);
-				int r = leaf[index<2>(0, 2*c+1)];
+			int leaf_index = regression_leaf_index(vImgView, idx, treetableView, channels, step);
+			auto leaf = GetLeafByID(leafsView, leafpointerView, index<2>(idx[0], leaf_index));		
+			// To speed up the voting, one can vote only for patches 
+				// with a probability for foreground > 0.5
+				// 
+			/*if ((*itL)->pfg[c] > prob_threshold)
+				{*/
+					// voting weight for leaf 
+					int ind = 2; // indexation from zero, so formula isn't (2*num_of_classes + 1)
+					int cntr_size = leaf[index<2>(0, 2)];
+					int w = leaf[index<2>(0, 0)]/float(cntr_size * tree_count);
+					int r = leaf[index<2>(0, 1)];
 
-				for (int point = 0; point < cntr_size; point++)
-				{
-					int x_ = int(idx[2] + xoffset - leaf[index<2>(0, ++ind)] + 0.5f);
-					int y_ = idx[1] + yoffset - leaf[index<2>(0, ++ind)];
-					if(y_ >= 0 && y_ < rows && x_ >= 0 && x_ < cols)
-					{
-						//atomic_fetch_add(&ptDetView[index<3>(y_, x_, c)], w);
-						ptDetView[index<3>(y_, x_, c)] += w;
-						int t = ptRatioView[index<3>(y_, x_, c)];
-						// get first short: (t >> 16) & 0x0000FFFF
-						//get second short: t & 0x0000FFFF
-						// int combineddata = ((first<<16) | ((second) & 0xffff));
-						ptRatioView[index<3>(y_, x_, c)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
+					while(cntr_size-- > 0)
+					{	
+						int x_ = int(idx[2] + xoffset - leaf[index<2>(0, ++ind)] + 0.5f);
+						int y_ = idx[1] + yoffset - leaf[index<2>(0, ++ind)];
+						if(y_ >= 0 && y_ < rows && x_ >= 0 && x_ < cols)
+						{
+							//atomic_fetch_add(&ptDetView[index<3>(y_, x_, c)], w);
+							ptDetView[index<3>(y_, x_, c)] += w;
+							int t = ptRatioView[index<3>(y_, x_, c)];
+							// get first short: (t >> 16) & 0x0000FFFF
+							//get second short: t & 0x0000FFFF
+							// int combineddata = ((first<<16) | ((second) & 0xffff));
+							ptRatioView[index<3>(y_, x_, c)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
+						}
 					}
-				}
-			//} // end if
-		}
-		//}	
-	});
-	
-	ptDetView.synchronize();
-	ptRatioView.synchronize();
+				//} // end if
+		});
+		ptDetView.synchronize();
+		ptRatioView.synchronize();
+	}
 
 	timer = clock() - timer;
 	}

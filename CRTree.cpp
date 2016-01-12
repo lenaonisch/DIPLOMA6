@@ -15,7 +15,7 @@ using namespace std;
 CRTree::CRTree(const char* filename) {
 	int dummy;
 	treetable_count = 0;
-	center_count = 0;
+	center_count = vector<int>(num_of_classes, 0);
 
 	FILE * pFile = fopen (filename,"r");
 	if (pFile != NULL)
@@ -43,7 +43,6 @@ CRTree::CRTree(const char* filename) {
 		}
 
 		// read tree leafs
-		center_count = 0;
 		LeafNode* ptLN = &leaf[0];
 		char symbol = '0';
 		for(unsigned int l=0; l<num_leaf; l++, ++ptLN) 
@@ -60,7 +59,7 @@ CRTree::CRTree(const char* filename) {
 			for (int p = 0; p < num_of_classes; p++)
 			{
 				fscanf (pFile, " %c %i",  &symbol, &dummy); // "|" symbol, number of patches
-				center_count += dummy;
+				center_count[p] += dummy;
 				ptLN->vCenter[p].resize(dummy);
 				for(int i=0; i<dummy; ++i)
 				{
@@ -278,7 +277,7 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 		if (sum != 0)
 			ptL->pfg[i] = scaled_pb[i] / sum;
 		ptL->vCenter[i].resize( TrainSet[i].size() );
-		center_count += TrainSet[i].size() ;
+		center_count[i] += TrainSet[i].size() ;
 		for(unsigned int k = 0; k<TrainSet[i].size(); k++)
 		{
 			ptL->vCenter[i][k] = TrainSet[i][k]->center;
@@ -550,21 +549,23 @@ void LeafNode::show(int delay, int width, int height) {
 	}
 }
 
-void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& leafs, cv::Mat& leafpointer)
+void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, vector<cv::Mat>& leafs, vector<cv::Mat>& leafpointer)
 {
 	int* pnode = this->treetable;
 	int* table_ = (int*)treetable.data + treetable.step1()*row;
 	for (int i = 0; i < num_nodes*7; i++)
 		*table_++ = *pnode++;
 
-	int * ptr = (int*)leafs.data + leafs.step1()*row;
-	int * pointer_ptr = (int*)leafpointer.data + leafpointer.step1()*row;
-	int i = 0;
+	//int * ptr = (int*)leafs.data + leafs.step1()*row;
+	//int * pointer_ptr = (int*)leafpointer.data + leafpointer.step1()*row;
+	vector<int> pos = vector<int>(num_of_classes,0);
 	for (int l = 0; l < num_leaf; l++)
 	{
-		*pointer_ptr++ = i;
 		for (int k = 0; k<num_of_classes;k++)
 		{
+			leafpointer[k].at<int>(row, l) = pos[k];
+			
+			int * ptr = (int*)leafs[k].data + leafs[k].step1()*row + pos[k];
 			*ptr++ = leaf[l].pfg[k]*10000;
 			*ptr++ = leaf[l].vRatio[k]*10;
 
@@ -575,8 +576,9 @@ void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& leafs,
 				*ptr++ = leaf[l].vCenter[k][c].x;
 				*ptr++ = leaf[l].vCenter[k][c].y;
 			}
-			i += (3 + c_size * 2);
+			pos[k] += (3 + c_size * 2);
 		}
 	}
-	*pointer_ptr++ = i;
+	for (int k = 0; k<num_of_classes;k++)
+		leafpointer[k].at<int>(row, num_leaf) = pos[k];
 }
