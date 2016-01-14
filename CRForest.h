@@ -32,7 +32,7 @@ public:
 		for(std::vector<CRTree*>::iterator it = vTrees.begin(); it != vTrees.end(); ++it) delete *it;
 		vTrees.clear();
 		amp_treetable.release();
-		for (int i = 0; i<num_of_classes;i++)
+		for (int i = 0; i<amp_leafs.size();i++)
 		{
 			amp_leafs[i].release(); // each Mat in vector - for each class of objects
 			amp_leafpointer[i].release();

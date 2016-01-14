@@ -102,8 +102,8 @@ public:
 private: 
 
 	// Private functions for training
-	void grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, vector<float> vRatio);
-	void makeLeaf(const vector<vector<const PatchFeature*> >& TrainSet, vector<float> vRatio, int node);
+	void grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, vector<float> percentage);
+	void makeLeaf(const vector<vector<const PatchFeature*> >& TrainSet, vector<float> percentage, int node);
 	void makeEmptyLeaf();
 	bool optimizeTest(vector<vector<const PatchFeature*> >& SetA, vector<vector<const PatchFeature*> >& SetB, const vector<vector<const PatchFeature*> >& TrainSet, int* test, unsigned int iter, unsigned int mode);
 	void generateTest(int* test, unsigned int max_w, unsigned int max_h, unsigned int max_c);
