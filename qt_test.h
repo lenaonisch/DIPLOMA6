@@ -116,6 +116,39 @@ private:
 					num_of_centers[i]+=gall_forest_app.crForest.vTrees[i]->leaf[j].vCenter[k].size();
 		}
 	}
+
+	void qt_test::ResizeToBWMasks()
+	{
+		///////
+		string outputfile = gall_forest_app.configpath+"/horses_rgb_rescaled/";
+		string inputfile = gall_forest_app.configpath+"/trainpos/";
+		//ofstream out(outputfile);
+		//////
+		string dirwhite = gall_forest_app.configpath+"/figure_ground/";
+		string list_file = gall_forest_app.configpath+"/out.txt";
+		const char * filename = (list_file).c_str();
+		FILE * pFile = fopen (filename,"r");
+
+		int N;
+		fscanf(pFile, "%i", &N);
+		
+
+		for (int i = 0; i<N; i++)
+		{
+			char buffer[200];
+			fscanf(pFile, "%s", &buffer);
+			string file = buffer;
+			cv::Mat bw;
+			bw = imread(dirwhite+file, 0);
+			bw.convertTo(bw, CV_8UC1);
+
+			cv::Mat rgb;
+			cv::Mat rgbr;
+			rgb = imread(inputfile+file, CV_LOAD_IMAGE_COLOR);
+			cv::resize(rgb, rgbr, bw.size());
+			cv::imwrite(outputfile+file, rgbr);
+		}
+	}
 public slots:
 	void on_actionOpen_triggered();
 	void on_actionLoad_config_file_triggered();
