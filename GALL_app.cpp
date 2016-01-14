@@ -499,22 +499,26 @@ void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output,
 	{
 		cv::Rect r = bbox;		
 		r.x -= 0.05*bbox.width;
-		if (r.x > 0)
-			output[k++] = temp(r);
+		if (r.x > 0){
+			temp(r).copyTo(output[k++]);
+		}
 		r.x = bbox.x + 0.05*bbox.width;
-		if (r.x + bbox.width < temp.cols)
-			output[k++] = temp(r);
+		if (r.x + bbox.width < temp.cols){
+			temp(r).copyTo(output[k++]);
+		}
 	}
 
 	if (fluctparam[3]) // move vert
 	{
 		cv::Rect r = bbox;
 		r.y -= 0.05*bbox.height;
-		if (r.y > 0)
-			output[k++] = temp(r);
+		if (r.y > 0){
+			temp(r).copyTo(output[k++]);
+		}
 		r.y = bbox.y + 0.05*bbox.height;
-		if (r.y + bbox.height < temp.rows)
-			output[k++] = temp(r);
+		if (r.y + bbox.height < temp.rows){
+			temp(r).copyTo(output[k++]);
+		}
 	}
 
 	if (fluctparam[4]) // flip hor.
@@ -578,17 +582,19 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 				char buffer[200];
 				Fluctuate(img, vBBox[i], output, dx);
 				bool write = true;
+				string short_name, ext;
+				getFilenameExt(vFilenames[i], short_name, ext);
 				for (int z = 0; z<output.size(); z++)
 				{
 					if (write){
-						string short_name, ext;
-						getFilenameExt(vFilenames[i], short_name, ext);
+						
 						sprintf_s(buffer,"%s_%d.%s",(configpath + train_rescaled_cropped_path + "/" + short_name).c_str(), z, ext.c_str());
 						cv::imwrite(buffer, output[z]);
 					}
 					Train.extractPatches(output[z], samples_pos, vClassNums[i], &vCenter[i]);
 					output[z].release();
 				}
+				output.swap(vector<cv::Mat>());
 			}
 			else
 			{
