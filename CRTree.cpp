@@ -242,19 +242,6 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 	}
 }
 
-// workaround when node has only one child: creates leaf for background
-void CRTree::makeEmptyLeaf() {
-	LeafNode* ptL = &leaf[0];
-
-	// Store data
-	ptL->pfg.resize(num_of_classes, 0);
-	ptL->vCenter.resize(num_of_classes);
-	ptL->vRatio.resize(num_of_classes,1);
-
-	// Increase leaf counter
-	++num_leaf;
-}
-
 // Create leaf node from patches 
 void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, vector<float> percentage, int node) {
 	// Get pointer
@@ -268,7 +255,7 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 	ptL->vCenter.resize(num_of_classes);
 	ptL->vRatio.resize(num_of_classes);
 	float sum = 0;
-	for (int i = 0; i < num_of_classes; i++)
+	for (int i = 0; i <= num_of_classes; i++)
 	{
 		scaled_pb[i] = TrainSet[i].size()*percentage[i];
 		sum += TrainSet[i].size();
