@@ -136,7 +136,13 @@ void qt_test::on_actionTrain_triggered()
 			//gall_forest_app.subsamples_pos = param_form->trainPart();	
 			//gall_forest_app.useAllMarkedPos = param_form->bUseAllMarkedInGUI();
 			gall_forest_app.fluctparam = param_form->bFluct();
-			int off_tree = 0;
+			
+			string tr_path = gall_forest_app.treepath;
+			std::size_t found = tr_path.find_last_of("/");
+			QDir dir(QString((gall_forest_app.configpath+tr_path.substr(0, found)).c_str()));
+			QStringList lst = dir.entryList(QStringList(QString((tr_path.substr(found+1)+"???.txt").c_str())));
+			
+			int off_tree = lst.count();
 			gall_forest_app.run_train(off_tree);
 			have_forest = true;
 		}
