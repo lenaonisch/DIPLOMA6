@@ -77,7 +77,7 @@ void GALL_app::loadConfig(string filename)
 		outpath = buffer;
 		// Scale factor for output image (default: 128)
 		in.getline(buffer,400);
-		in >> out_scale;
+		in >> crDetect.testParam.out_scale;
 		in.getline(buffer,400);
 		// Path to positive examples
 		in.getline(buffer,400);
@@ -168,7 +168,7 @@ void GALL_app::run_train(int off_tree)
 			
 	// Extract training patches
 	extract_Patches(Train, &cvRNG);
-	CRForestDetector crDetect(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), &width_aver, &height_min, out_scale);
+	CRForestDetector crDetect(&crForest, p_width, p_height, TestParam(), &width_aver, &height_min);
 	crDetect.save((configpath + treepath + "forest_detector.txt").c_str());
 
 	// Train forest
@@ -186,10 +186,11 @@ void GALL_app::run_train(int off_tree)
 void GALL_app::run_detect(bool& load_forest, map<string, Results>& results) {
 	if (!load_forest)
 	{
+		TestParam temp = crDetect.testParam;
 		loadForest();
+		crDetect.testParam = temp;
 		load_forest = true;
 	}
-
 	// run detector
 	for(map<string, Results>::iterator it = results.begin(); it != results.end(); ++it) {
 		if (!it->second.processed)
@@ -201,10 +202,11 @@ void GALL_app::run_detect(bool& load_forest, map<string, Results>& results) {
 void GALL_app::run_detect(bool& load_forest, string filename, Results& results) {
 	if (!load_forest)
 	{
+		TestParam temp = crDetect.testParam;
 		loadForest();
+		crDetect.testParam = temp;
 		load_forest = true;
 	}
-
 	// run detector
 	detect(crDetect,  filename, results);
 }
@@ -220,7 +222,7 @@ void GALL_app::loadForest()
 	crForest.loadForest(fpath.c_str());	
 
 	// Init detector
-	crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), out_scale, (configpath + treepath + "forest_detector.txt").c_str());
+	crDetect = CRForestDetector(&crForest, TestParam(), (configpath + treepath + "forest_detector.txt").c_str());
 	//crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
 
 	// create directory for output
@@ -417,12 +419,13 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	// Store result
 	for(unsigned int k = 0; k < vImgDetect.size(); k++) {
 		for(unsigned int c = 0; c < vImgDetect[k].size(); ++c) {
-				
-			//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
-			// int k - scale, c - index of class
-			sprintf_s(buffer,"%s/%s_scale%f_%s.%s",(configpath + outpath).c_str(), short_name.c_str(), scales[k], classes[c].c_str(), ext.c_str());
-			cv::imwrite( buffer, vImgDetect[k][c] );
-
+			
+			if (crDetect.testParam.bSaveHoughSpace){
+				//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
+				// int k - scale, c - index of class
+				sprintf_s(buffer,"%s/%s_scale%f_%s.%s",(configpath + outpath).c_str(), short_name.c_str(), scales[k], classes[c].c_str(), ext.c_str());
+				cv::imwrite( buffer, vImgDetect[k][c] );
+			}
 			vImgDetect[k][c].release();
 				
 		}

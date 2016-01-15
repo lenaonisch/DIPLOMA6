@@ -1,3 +1,4 @@
+#pragma once
 #include <StdAfx.h>
 #include <exception>
 
@@ -81,4 +82,33 @@ public:
 
 	MaxPoint(){}
 	MaxPoint(int x, int y, float _pf, int _class_label) : class_label(_class_label), point(x,y), pf(_pf){}
+};
+
+struct TestParam
+{
+public:
+	// test parameters
+	int max_treshold; 
+	int kernel;
+	int out_scale; // scale factor for output image (default: 128)
+	float prob_threshold; // leaf must have (>=prob_threshold) to be able to vote for center
+	bool bSaveHoughSpace;
+	~TestParam(){}
+	TestParam():max_treshold(150), kernel(3), prob_threshold(0), out_scale(100), bSaveHoughSpace(false){}
+	
+	TestParam(int max_treshold, int kernel, int out_scale, float prob_threshold, bool bSaveHoughSpace):
+		max_treshold(max_treshold), kernel(kernel), out_scale(out_scale), prob_threshold(prob_threshold), bSaveHoughSpace(bSaveHoughSpace){}
+	
+	TestParam& operator=(TestParam& right) { // copy/move constructor is called to construct arg
+		if (this == &right) {
+            return *this;
+        }
+
+		max_treshold = right.max_treshold;
+		kernel = right.kernel;
+		out_scale = right.out_scale;
+		prob_threshold = right.prob_threshold;
+		bSaveHoughSpace = right.bSaveHoughSpace;
+		return *this;
+	}
 };

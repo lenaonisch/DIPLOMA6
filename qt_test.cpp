@@ -172,8 +172,13 @@ void qt_test::on_actionBatch_detect_triggered()
 		}
 		for (int i = 0; i < filepaths.size(); i++)
 			positive[filepaths[i]].processed = false;// workaroung to initialize positive variable
-		gall_forest_app.run_detect(have_forest, positive);
-		DisplayPositiveFiles();
+		TestParameters* param_form = new TestParameters;
+		if (param_form->exec() == QDialog::Accepted)
+		{
+			gall_forest_app.crDetect.testParam = param_form->testParameters();
+			gall_forest_app.run_detect(have_forest, positive);
+			DisplayPositiveFiles();
+		}
 	}
 	catch (exception& e)
 	{
@@ -198,8 +203,13 @@ void qt_test::on_actionDetect_triggered()
 			ShowMessage("Image has been already processed!");
 			return;
 		}
-		gall_forest_app.run_detect(have_forest, filepaths[img_index], positive[filepaths[img_index]]);
-		DisplayPositiveFiles();
+		TestParameters* param_form = new TestParameters;
+		if (param_form->exec() == QDialog::Accepted)
+		{
+			gall_forest_app.crDetect.testParam = param_form->testParameters();
+			gall_forest_app.run_detect(have_forest, filepaths[img_index], positive[filepaths[img_index]]);
+			DisplayPositiveFiles();
+		}
 	/*}
 	catch (exception& e)
 	{

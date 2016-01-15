@@ -123,6 +123,7 @@ try {
 	concurrency::extent<2> e_treetable(crForest->vTrees.size(), crForest->amp_treetable.cols);
 	array_view<const int, 2> treetableView(e_treetable, (int*)crForest->amp_treetable.data);
 	
+	float prob_threshold = testParam.prob_threshold;
 
 	int tree_count = crForest->vTrees.size();
 	concurrency::extent<3> e_main(tree_count, img.rows-height, img.cols-width);
@@ -142,8 +143,8 @@ try {
 			// To speed up the voting, one can vote only for patches 
 				// with a probability for foreground > 0.5
 				// 
-			/*if ((*itL)->pfg[c] > prob_threshold)
-				{*/
+			if (leaf[index<2>(0, 0)] > prob_threshold)
+				{
 					// voting weight for leaf 
 					int ind = 2; // indexation from zero, so formula isn't (2*num_of_classes + 1)
 					int cntr_size = leaf[index<2>(0, 2)];
@@ -165,7 +166,7 @@ try {
 							ptRatioView[index<3>(y_, x_, c)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
 						}
 					}
-				//} // end if
+				} // end if
 		});
 		ptDetView.synchronize();
 		ptRatioView.synchronize();
@@ -245,20 +246,18 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			detecCol = clock() - detecCol;
 			result.time[3] += detecCol;
 
-			int treshold = 150;
-
 			cv::split(tmps, vImgDetect[i]);
 			for (int c = 0; c<num_of_classes;c++)
 			{
-				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale/10000.0);
-				GaussianBlur(vImgDetect[i][c], vImgDetect[i][c], cv::Size(3,3), 0);
+				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, testParam.out_scale/10000.0f);
+				GaussianBlur(vImgDetect[i][c], vImgDetect[i][c], cv::Size(testParam.kernel, testParam.kernel), 0);
 			}
 			tmps.release();
 
 			
 			localmax = clock();
 			for (int c = 0; c < num_of_classes; c++)
-				localMaxima(vImgDetect[i][c], cv::Size(width_aver[c]*scales[i], height_min[c]*scales[i]), maxs, c, treshold);
+				localMaxima(vImgDetect[i][c], cv::Size(width_aver[c]*scales[i], height_min[c]*scales[i]), maxs, c, testParam.max_treshold);
 			localmax = clock() - localmax;
 			result.time[4] = localmax;
 

@@ -12,23 +12,20 @@
 class CRForestDetector {
 public:
 	// Constructor
-	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, int _out_scale, const char* filename) : 
-				crForest(pRF), width(w), height(h), prob_threshold(prob_t)
+	CRForestDetector(const CRForest* pRF, TestParam testParam, const char* filename) : 
+				crForest(pRF), testParam(testParam)
 	{
 		//width_aver = *aver_width; // will be read from file
 		//height_min = *_height_min;
-		out_scale = _out_scale;
-
 		load(filename);
 
 	}
 
-	CRForestDetector(const CRForest* pRF, int w, int h, float prob_t, vector<int>* aver_width, vector<int>* _height_min, int _out_scale) : 
-				crForest(pRF), width(w), height(h), prob_threshold(prob_t)
+	CRForestDetector(const CRForest* pRF, int w, int h, TestParam testParam, vector<int>* aver_width, vector<int>* _height_min) : 
+				crForest(pRF), width(w), height(h), testParam(testParam)
 	{
 		width_aver = *aver_width;
 		height_min = *_height_min;
-		out_scale = _out_scale;
 	}
 
 	CRForestDetector(){}
@@ -41,11 +38,9 @@ public:
 		crForest = right.crForest;
 		width = right.width;
 		height = right.height;
-		prob_threshold = right.prob_threshold;
+		testParam = right.testParam;
 		width_aver = right.width_aver;
 		height_min = right.height_min;
-		out_scale = right.out_scale;
-
 		return *this;
 	}
 
@@ -64,7 +59,7 @@ public:
 			//out << "# Out scale (copied from config.txt)" << endl;
 			//out << out_scale << endl;
 			//out << "# Threshold to make leaf vote for particular class center" << endl;
-			out << prob_threshold << endl;
+			out << testParam.prob_threshold << endl;
 			//out << "# Width for classes" << endl;
 			for (int i=0;i<num_of_classes; i++)
 				out << width_aver[i]<<" ";
@@ -83,7 +78,7 @@ public:
 			//fscanf (pFile, "%i", &class_count);
 			fscanf (pFile, "%i %i", &width, &height);
 			//fscanf (pFile, "%i", &out_scale);
-			fscanf (pFile, "%f", &prob_threshold);
+			fscanf (pFile, "%f", &testParam.prob_threshold);
 			width_aver.resize(num_of_classes);
 			height_min.resize(num_of_classes);
 			for (int i = 0; i < num_of_classes; i++)
@@ -99,14 +94,14 @@ public:
 
 	//float** leafs;
 	//unsigned int** leafpointer;
+	TestParam testParam;
 private:
 	// returns time
 	int detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios); 
 	const CRForest* crForest;
 	int width;
 	int height;
-	float prob_threshold; // leaf must have (>=prob_threshold) to be able to vote for center
+	
 	vector<int> width_aver;
 	vector<int> height_min;
-	int out_scale;
 };

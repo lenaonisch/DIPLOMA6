@@ -100,6 +100,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_testparameters.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_trainparameters.cpp" />
     <ClCompile Include="GeneratedFiles\qrc_qt_test.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -109,6 +110,7 @@
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Release\moc_MouseLabel.cpp" />
     <ClCompile Include="GeneratedFiles\Release\moc_qt_test.cpp" />
+    <ClCompile Include="GeneratedFiles\Release\moc_trainparameters.cpp" />
     <ClCompile Include="HierarhicalThreshold.cpp" />
     <ClCompile Include="HoG.cpp" />
     <ClCompile Include="main.cpp" />
@@ -116,6 +118,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="qt_test.cpp" />
+    <ClCompile Include="testparameters.cpp" />
     <ClCompile Include="trainparameters.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,9 +159,19 @@
     <ClInclude Include="GeneratedFiles\ui_qt_test.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_testparameters.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_trainparameters.h" />
     <ClInclude Include="HierarhicalThreshold.h" />
     <ClInclude Include="HoG.h" />
+    <CustomBuild Include="testparameters.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB "-I.\GeneratedFiles" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets"  "-fStdAfx.h" "-f../../testparameters.h"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing testparameters.h...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
+    </CustomBuild>
     <CustomBuild Include="trainparameters.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DWIN64 -DQT_DLL -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB  "-I.\GeneratedFiles" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets" "-I$(OPENCV_DIR)\..\..\include\openvc" "-I$(OPENCV_DIR)\..\..\include" "-fStdAfx.h" "-f../../trainparameters.h"</Command>
@@ -195,6 +208,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <None Include="testparameters.ui" />
     <None Include="trainparameters.ui" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

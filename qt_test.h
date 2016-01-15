@@ -2,6 +2,7 @@
 #include "StdAfx.h"
 #include "GALL_app.h"
 #include "trainparameters.h"
+#include "testparameters.h"
 #include "AMP_char.h"
 
 #ifndef QT_TEST_H
