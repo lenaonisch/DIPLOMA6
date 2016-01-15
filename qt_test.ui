@@ -300,6 +300,7 @@
     <addaction name="actionLoad_config_file"/>
     <addaction name="actionTrain"/>
     <addaction name="actionLoad_test_images"/>
+    <addaction name="actionSave_rectangles"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -438,6 +439,14 @@
    </property>
    <property name="text">
     <string>Drop All results</string>
+   </property>
+  </action>
+  <action name="actionSave_rectangles">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save rectangles</string>
    </property>
   </action>
  </widget>

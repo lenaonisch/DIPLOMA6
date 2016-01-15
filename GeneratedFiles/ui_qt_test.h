@@ -49,6 +49,7 @@ public:
     QAction *actionAdd_negative;
     QAction *actionRemove;
     QAction *actionDrop_All_results;
+    QAction *actionSave_rectangles;
     QWidget *centralWidget;
     QHBoxLayout *horizontalLayout_2;
     QTabWidget *tabWidget;
@@ -136,6 +137,9 @@ public:
         QIcon icon6;
         icon6.addFile(QStringLiteral(":/qt_test/GeneratedFiles/bin.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionDrop_All_results->setIcon(icon6);
+        actionSave_rectangles = new QAction(qt_testClass);
+        actionSave_rectangles->setObjectName(QStringLiteral("actionSave_rectangles"));
+        actionSave_rectangles->setEnabled(false);
         centralWidget = new QWidget(qt_testClass);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         horizontalLayout_2 = new QHBoxLayout(centralWidget);
@@ -302,6 +306,7 @@ public:
         menuSetup->addAction(actionLoad_config_file);
         menuSetup->addAction(actionTrain);
         menuSetup->addAction(actionLoad_test_images);
+        menuSetup->addAction(actionSave_rectangles);
         menuView->addAction(actionZoom_in_2);
         menuView->addAction(actionZoom_out_2);
         menuView->addAction(actionRefresh);
@@ -344,6 +349,7 @@ public:
         actionAdd_negative->setText(QApplication::translate("qt_testClass", "Add negative", 0));
         actionRemove->setText(QApplication::translate("qt_testClass", "Remove", 0));
         actionDrop_All_results->setText(QApplication::translate("qt_testClass", "Drop All results", 0));
+        actionSave_rectangles->setText(QApplication::translate("qt_testClass", "Save rectangles", 0));
 #ifndef QT_NO_TOOLTIP
         btnAddPositive->setToolTip(QApplication::translate("qt_testClass", "Add positive example", 0));
 #endif // QT_NO_TOOLTIP

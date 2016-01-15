@@ -50,7 +50,7 @@ public:
 	}
 
 	// detect multi scale
-	double* detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat> >& imgDetect, Results& result);
+	void detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat> >& imgDetect, Results& result);
 	int maxUsedValInHistogramData(cv::Mat src);
 	bool localMaxima(cv::Mat src, cv::Size size, vector<MaxPoint>& locations, int class_label, int threshold);
 
@@ -59,7 +59,7 @@ public:
 		if(out.is_open()) {
 			//out << "# Number of classes" << endl;
 			//out << class_count << endl;
-			out << "# Width & height of patch" << endl;
+			//out << "# Width & height of patch" << endl;
 			out << width << " " << height << " " << endl;
 			//out << "# Out scale (copied from config.txt)" << endl;
 			//out << out_scale << endl;

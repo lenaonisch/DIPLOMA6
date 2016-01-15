@@ -145,7 +145,7 @@ void GALL_app::loadConfig(string filename)
 	in.close();
 }
 
-void GALL_app::run_train()
+void GALL_app::run_train(int off_tree)
 {
 		// Init forest with number of trees
 	CRForest crForest( ntrees ); 
@@ -174,7 +174,6 @@ void GALL_app::run_train()
 	// Train forest
 	string spath(configpath);
 	spath += treepath;
-	off_tree = 0;
 	crForest.trainForest(20, 15, &cvRNG, Train, binary_tests_iterations,spath.c_str(), off_tree);
 
 	//// Save forest
@@ -411,7 +410,7 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	}
 
 	// Detection for all scales and classes
-	double* timers = crDetect.detectPyramid(img, scales, vImgDetect, results);
+	crDetect.detectPyramid(img, scales, vImgDetect, results);
 	results.processed = true;
 	filename = short_name;
 
@@ -544,6 +543,7 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	vector<cv::Rect> vBBox;
 	vector<cv::Point> vCenter;
 	vector<unsigned int> vClassNums; // to what class object belongs
+	ofstream outUnused(configpath+"/unused.txt");
 
 	// load positive file list
 	if (width_aver.size() == 0)
@@ -551,6 +551,8 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	else
 		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums); // all images will be resized to one width pointed in config file
 
+	if (subsamples_pos > 0)
+		subsamples_pos = vFilenames.size()*subsamples_pos/100.0f;
 	// load postive images and extract patches
 	vCenter.resize(vFilenames.size());
 	for(int i=0; i<(int)vFilenames.size(); ++i) 
@@ -604,7 +606,16 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 			// Release image
 			img.release();
 			to_extract.release();
-	  }		
+	  }	
+	  else
+	  {
+		  if(outUnused.is_open()) {
+			  outUnused<<vFilenames[i]<<endl;
+		  }
+	  }
+	}
+	if(outUnused.is_open()) {
+		outUnused.close();
 	}
 	//cout << endl;
 

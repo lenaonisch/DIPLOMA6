@@ -17,6 +17,13 @@ qt_test::qt_test(QWidget *parent)
 
 	//ui.scrollAreaInput->setBackgroundRole(QPalette::Dark);
 	ui.scrollAreaInput->setWidget(ui.lblInput);
+	ui.treeResults->setColumnCount(3);
+	QStringList strList;
+	strList.append("Filename");
+	strList.append("Total time");
+	strList.append("Voting time");
+	ui.treeResults->setHeaderLabels(strList);
+	ui.treeResults->header()->show();
 }
 
 qt_test::~qt_test()
@@ -69,6 +76,7 @@ void qt_test::AddPositiveRectToTree(QTreeWidgetItem* node, cv::Rect* rect, int c
 		text = QString("negative: %1, %2->%3, %4").arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height);
 	else
 		text = QString("%1: %2, %3->%4, %5").arg(gall_forest_app.classes[class_].c_str()).arg(rect->x).arg(rect->y).arg(rect->width).arg(rect->height);
+	ui.actionSave_rectangles->setEnabled(true);
 	QTreeWidgetItem* item = new QTreeWidgetItem(QStringList(text));
 	item->setToolTip(0, text);
 	node->addChild(item);
@@ -96,7 +104,15 @@ void qt_test::DisplayPositiveFiles()
 	for (int i = 0; i < filepaths.size(); ++i)
 	{
 		Results* res = &positive[filepaths[i]];
-		QTreeWidgetItem* next = new QTreeWidgetItem(QStringList(QString(gall_forest_app.getFilename(filepaths[i]).c_str()+QString("   %1").arg(res->time))));
+		QStringList strList;
+		strList.append(QString(gall_forest_app.getFilename(filepaths[i]).c_str()));
+		if (res->time.size() > 0)
+		{
+			strList.append(QString("   %1").arg(res->time[0]));
+			strList.append(QString("   %1").arg(res->time[2]));
+		}
+		QTreeWidgetItem* next = new QTreeWidgetItem(strList);
+		next->setFirstColumnSpanned(true);
 		next->setToolTip(0, QString(filepaths[i].c_str()));
 		for (int j = 0;j < res->classes.size(); j++)
 		{
@@ -112,14 +128,16 @@ void qt_test::on_actionTrain_triggered()
 	try
 	{
 		TrainParameters* param_form = new TrainParameters;
+		param_form->ui->edtBinaryTests->setText(QString("%1").arg(gall_forest_app.binary_tests_iterations));
 		if (param_form->exec() == QDialog::Accepted)
 		{
 			gall_forest_app.binary_tests_iterations = param_form->binary_tests_iterations();
 			gall_forest_app.ntrees = param_form->trees();
-			gall_forest_app.subsamples_pos = param_form->trainPart();	
-			gall_forest_app.useAllMarkedPos = param_form->bUseAllMarkedInGUI();
+			//gall_forest_app.subsamples_pos = param_form->trainPart();	
+			//gall_forest_app.useAllMarkedPos = param_form->bUseAllMarkedInGUI();
 			gall_forest_app.fluctparam = param_form->bFluct();
-			gall_forest_app.run_train();
+			int off_tree = 0;
+			gall_forest_app.run_train(off_tree);
 			have_forest = true;
 		}
 	}
@@ -165,8 +183,8 @@ void qt_test::on_actionBatch_detect_triggered()
 
 void qt_test::on_actionDetect_triggered()
 {
-	try
-	{
+	/*try
+	{*/
 		last_selected_result = -1;
 		int img_index; //res_index not used
 		GetSelectedImageResult(img_index);
@@ -182,11 +200,11 @@ void qt_test::on_actionDetect_triggered()
 		}
 		gall_forest_app.run_detect(have_forest, filepaths[img_index], positive[filepaths[img_index]]);
 		DisplayPositiveFiles();
-	}
+	/*}
 	catch (exception& e)
 	{
 		ShowMessage(e.what(),2);
-	}
+	}*/
 }
 
 void qt_test::on_actionOpen_triggered()
@@ -598,7 +616,6 @@ void qt_test::LoadRectsFromBWMasks()
 
 void qt_test::on_actionLoad_test_images_triggered()
 {
-	cout<<"sdfsfsf";
 	try
 	{
 		QMessageBox::StandardButton reply;
@@ -636,6 +653,7 @@ void qt_test::on_btnDropAllResults_clicked()
 	DisplayPositiveFiles();
 	if (last_selected_result>=0 && filepaths.size() > last_selected_result)
 		loadFile(filepaths[last_selected_result].c_str(), NULL);
+	ui.actionSave_rectangles->setEnabled(false);
 }
 
 void qt_test::on_btnRemove_clicked()
@@ -666,5 +684,52 @@ void qt_test::on_btnRemove_clicked()
 		}
 		ui.treeResults->topLevelItem(img_index)->setSelected(true);
 		loadFile(QString((filepaths[img_index]).c_str()), &positive[filepaths[img_index]]);
+	}
+}
+
+void qt_test::on_actionSave_rectangles_triggered()
+{
+	QString fileNamePos = QFileDialog::getSaveFileName(this,
+         tr("Save detected and marked POSITIVE rectangles"), QDir::currentPath()+"/positive_detected.txt", "Text files (*.txt);");
+	QString fileNameNeg = QFileDialog::getSaveFileName(this,
+         tr("Save detected and marked NEGATIVE rectangles"), QDir::currentPath()+"/negative_detected.txt", "Text files (*.txt);");
+
+	string filenamePos = fileNamePos.toLocal8Bit().constData();
+	string filenameNeg = fileNameNeg.toLocal8Bit().constData();
+	try
+	{
+		ofstream outPos(filenamePos);
+		ofstream outNeg(filenameNeg);
+		if(outPos.is_open()&& outNeg.is_open()) {
+			
+			for (int i = 0; i < filepaths.size(); ++i)
+			{
+				Results* res = &positive[filepaths[i]];
+				for (int r = 0; r < res->rects.count(); r++)
+				{
+					if (res->classes[r] != num_of_classes)
+					{
+						outPos<<gall_forest_app.getFilename(filepaths[i]).c_str() << " ";
+						cv::Rect rect = res->rects[r];
+						outPos<<rect.x <<" "<<rect.y<<" "<<rect.width<<" "<<rect.height<<" "<<res->classes[r]<<endl;
+					}
+					else
+					{
+						outNeg<<gall_forest_app.getFilename(filepaths[i]).c_str() << " ";
+						cv::Rect rect = res->rects[r];
+						outNeg<<rect.x <<" "<<rect.y<<" "<<rect.width<<" "<<rect.height<<endl;
+					}
+				}
+			}
+			outPos.close();
+			outNeg.close();
+		}
+		else 
+			throw string_exception("Can't write rects to files!");
+
+	}
+	catch (exception& e)
+	{
+		ShowMessage(e.what(),2);
 	}
 }
