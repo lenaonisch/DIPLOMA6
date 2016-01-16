@@ -749,3 +749,32 @@ void qt_test::on_actionSave_rectangles_triggered()
 		ShowMessage(e.what(),2);
 	}
 }
+
+void qt_test::on_actionExport_detection_time_triggered()
+{
+	QString fileName = QFileDialog::getSaveFileName(this,
+         tr("Export time spent on detection"), QDir::currentPath()+"/detection_time.csv", "CSV(*.csv); Text (*.txt); All files (*.*);");
+
+	string filename = fileName.toLocal8Bit().constData();
+	try
+	{
+		ofstream out(filename);
+		if(out.is_open()) {
+			out<<"Filename;Total time;Voting time;"<<endl;
+			for (int i = 0; i < filepaths.size(); ++i)
+			{
+				out<<gall_forest_app.getFilename(filepaths[i]).c_str() << ";";
+				Results* res = &positive[filepaths[i]];	
+				out<<res->time[0] <<";"<<res->time[2]<<endl;
+			}
+			out.close();
+		}
+		else 
+			throw string_exception("Can't write results to file!");
+
+	}
+	catch (exception& e)
+	{
+		ShowMessage(e.what(),2);
+	}
+}

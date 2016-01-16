@@ -50,6 +50,8 @@ public:
     QAction *actionRemove;
     QAction *actionDrop_All_results;
     QAction *actionSave_rectangles;
+    QAction *actionSave_results;
+    QAction *actionExport_detection_time;
     QWidget *centralWidget;
     QHBoxLayout *horizontalLayout_2;
     QTabWidget *tabWidget;
@@ -140,6 +142,10 @@ public:
         actionSave_rectangles = new QAction(qt_testClass);
         actionSave_rectangles->setObjectName(QStringLiteral("actionSave_rectangles"));
         actionSave_rectangles->setEnabled(false);
+        actionSave_results = new QAction(qt_testClass);
+        actionSave_results->setObjectName(QStringLiteral("actionSave_results"));
+        actionExport_detection_time = new QAction(qt_testClass);
+        actionExport_detection_time->setObjectName(QStringLiteral("actionExport_detection_time"));
         centralWidget = new QWidget(qt_testClass);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         horizontalLayout_2 = new QHBoxLayout(centralWidget);
@@ -303,6 +309,8 @@ public:
         menuFile->addAction(actionAdd_negative);
         menuFile->addAction(actionRemove);
         menuFile->addAction(actionDrop_All_results);
+        menuFile->addSeparator();
+        menuFile->addAction(actionExport_detection_time);
         menuSetup->addAction(actionLoad_config_file);
         menuSetup->addAction(actionTrain);
         menuSetup->addAction(actionLoad_test_images);
@@ -326,7 +334,7 @@ public:
 
     void retranslateUi(QMainWindow *qt_testClass)
     {
-        qt_testClass->setWindowTitle(QApplication::translate("qt_testClass", "qt_test", 0));
+        qt_testClass->setWindowTitle(QApplication::translate("qt_testClass", "Object detection", 0));
 #ifndef QT_NO_TOOLTIP
         qt_testClass->setToolTip(QApplication::translate("qt_testClass", "Delete single item", 0));
 #endif // QT_NO_TOOLTIP
@@ -350,6 +358,8 @@ public:
         actionRemove->setText(QApplication::translate("qt_testClass", "Remove", 0));
         actionDrop_All_results->setText(QApplication::translate("qt_testClass", "Drop All results", 0));
         actionSave_rectangles->setText(QApplication::translate("qt_testClass", "Save rectangles", 0));
+        actionSave_results->setText(QApplication::translate("qt_testClass", "Save results", 0));
+        actionExport_detection_time->setText(QApplication::translate("qt_testClass", "Export detection time", 0));
 #ifndef QT_NO_TOOLTIP
         btnAddPositive->setToolTip(QApplication::translate("qt_testClass", "Add positive example", 0));
 #endif // QT_NO_TOOLTIP

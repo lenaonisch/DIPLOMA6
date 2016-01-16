@@ -169,6 +169,7 @@ public slots:
 	void on_btnRemove_clicked();
 	void on_treeResults_clicked();
 	void on_actionSave_rectangles_triggered();
+	void on_actionExport_detection_time_triggered();
 };
 
 #endif // QT_TEST_H

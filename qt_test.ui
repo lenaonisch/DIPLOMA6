@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>qt_test</string>
+   <string>Object detection</string>
   </property>
   <property name="windowIcon">
    <iconset resource="qt_test.qrc">
@@ -292,6 +292,8 @@
     <addaction name="actionAdd_negative"/>
     <addaction name="actionRemove"/>
     <addaction name="actionDrop_All_results"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_detection_time"/>
    </widget>
    <widget class="QMenu" name="menuSetup">
     <property name="title">
@@ -447,6 +449,16 @@
    </property>
    <property name="text">
     <string>Save rectangles</string>
+   </property>
+  </action>
+  <action name="actionSave_results">
+   <property name="text">
+    <string>Save results</string>
+   </property>
+  </action>
+  <action name="actionExport_detection_time">
+   <property name="text">
+    <string>Export detection time</string>
    </property>
   </action>
  </widget>

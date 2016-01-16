@@ -109,6 +109,9 @@
     <CustomBuild Include="trainparameters.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="testparameters.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_qt_test.h">
@@ -148,9 +151,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AMPForest.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="testparameters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_testparameters.h">
