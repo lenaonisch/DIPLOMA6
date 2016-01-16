@@ -43,7 +43,7 @@ public:
 
 	// IO functions
 	void saveForest(const char* filename, unsigned int offset = 0);
-	void loadForest(const char* filename);
+	virtual void loadForest(const char* filename);
 	void show(int w, int h) const {vTrees[0]->showLeaves(w,h);}
 
 	// Trees

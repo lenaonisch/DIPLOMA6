@@ -48,7 +48,7 @@ public:
 	}
 
 	// detect multi scale
-	double* detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat> >& imgDetect, Results& result);
+	virtual double* detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat> >& imgDetect, Results& result);
 	int maxUsedValInHistogramData(cv::Mat src);
 	bool localMaxima(cv::Mat src, cv::Size size, vector<MaxPoint>& locations, int class_label, int threshold);
 
@@ -92,7 +92,7 @@ public:
 	}
 
 private:
-	int detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios);
+	virtual int detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios);
 	const CRForest* crForest;
 	int width;
 	int height;
