@@ -150,8 +150,8 @@ void CRTree::growTree(const CRPatch& TrData, int samples) {
 
 	vector<float> percentage(num_of_classes+1);
 	vector<vector<const PatchFeature*> > TrainSet( TrData.vLPatches.size() );
-	float n0 = TrData.vLPatches[0].size();
-	for (int i = 1; i<num_of_classes+1; i++)
+	float n0 = 0;
+	for (int i = 0; i<TrData.vLPatches.size(); i++)
 		n0+=TrData.vLPatches[i].size();
 	
 	for(unsigned int l=0; l<TrainSet.size(); l++) {
@@ -250,15 +250,15 @@ void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& Trai
 	LeafNode* ptL = &leaf[num_leaf];
 
 	// Store data
-	vector<float> scaled_pb(num_of_classes, 0);
+	vector<float> scaled_pb(num_of_classes+1, 0);
 	ptL->pfg.resize(num_of_classes, 0);
 	ptL->vCenter.resize(num_of_classes);
 	ptL->vRatio.resize(num_of_classes);
 	float sum = 0;
 	for (int i = 0; i <= num_of_classes; i++)
 	{
-		scaled_pb[i] = TrainSet[i].size()*percentage[i];
-		sum += TrainSet[i].size();
+		scaled_pb[i] = TrainSet[i].size()/percentage[i];
+		sum += scaled_pb[i];
 	}
 	for (int i = 0; i < num_of_classes; i++)
 	{

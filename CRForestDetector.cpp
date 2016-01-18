@@ -293,10 +293,17 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			cv::Rect rect(maxs[i].point.x-w/2, maxs[i].point.y-h/2, w,h);
 			for (int j = 0; j < i;j++)
 			{
-				if (rect.contains(maxs[j].point) && maxs[j].pf > maxs[i].pf)
+				if (rect.contains(maxs[j].point)) 
 				{
-					maxs[i].pf = 0;
-					break;
+					if (maxs[j].pf > maxs[i].pf)
+					{
+						maxs[i].pf = 0;
+						break;
+					}
+					else
+					{
+						maxs[j].pf = 0;
+					}
 				}
 			}
 		}

@@ -305,8 +305,9 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 					&vClassNums[i]);
 
 			vFilenames[i] = name;
-			vBBox[i].width -= vBBox[i].x; 
-			vBBox[i].height -= vBBox[i].y;
+			//temprorary commented
+			//vBBox[i].width -= vBBox[i].x; 
+			//vBBox[i].height -= vBBox[i].y;
 			/*vCenter[i].x = vBBox[i].width/2;
 			vCenter[i].y = vBBox[i].height/2;*/
 
@@ -364,9 +365,9 @@ void GALL_app::loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv:
 			if(numop>0) {
 				in >> vBBox[i].x; in >> vBBox[i].y; 
 				in >> vBBox[i].width;
-				vBBox[i].width -= vBBox[i].x; 
+				//vBBox[i].width -= vBBox[i].x; 
 				in >> vBBox[i].height;
-				vBBox[i].height -= vBBox[i].y;
+				//vBBox[i].height -= vBBox[i].y;
 
 				if(vBBox[i].width<p_width || vBBox[i].height<p_height) {
 					throw string_exception("Width or height are too small " + vFilenames[i]);
@@ -546,7 +547,9 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	vector<cv::Rect> vBBox;
 	vector<cv::Point> vCenter;
 	vector<unsigned int> vClassNums; // to what class object belongs
+
 	ofstream outUnused(configpath+"/unused.txt");
+	ofstream outUsed(configpath+"/used.txt");
 
 	// load positive file list
 	if (width_aver.size() == 0)
@@ -566,6 +569,11 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	  {
 			// Load image
 			cv::Mat img;
+			if(outUsed.is_open())
+			{
+				outUsed<<vFilenames[i]<<" ";
+				outUsed<<vBBox[i].x<<" "<<vBBox[i].y<<" "<<vBBox[i].width<<" "<<vBBox[i].height<<" "<<vClassNums[i]<<endl;
+			}
 			string sfile (configpath+trainpospath + "/" + vFilenames[i]);
 			img = cv::imread(sfile.c_str(),CV_LOAD_IMAGE_COLOR);
 			if(!img.data) {
@@ -610,15 +618,19 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 			img.release();
 			to_extract.release();
 	  }	
-	  else
-	  {
-		  if(outUnused.is_open()) {
-			  outUnused<<vFilenames[i]<<endl;
-		  }
-	  }
+		else
+		{
+			if(outUnused.is_open())
+			{
+				outUnused<<vFilenames[i]<<endl;
+			}
+		}
 	}
-	if(outUnused.is_open()) {
+	if(outUnused.is_open()){
 		outUnused.close();
+	}
+	if(outUsed.is_open()) {
+		outUsed.close();
 	}
 	//cout << endl;
 

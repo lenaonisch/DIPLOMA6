@@ -37,6 +37,7 @@ public:
 		classes.clear();
 		rects.clear();
 		colors.clear();
+		time.clear();
 		processed = false;
 	}
 
