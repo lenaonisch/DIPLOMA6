@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BADAC5D9-5170-44A5-87EE-EBC41A12BB3A}</ProjectGuid>
     <Keyword>Qt4VSv1.0</Keyword>
+    <ProjectName>obj_detector</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
