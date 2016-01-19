@@ -37,7 +37,7 @@ public:
 		classes.clear();
 		rects.clear();
 		colors.clear();
-		time.clear();
+		time.swap(vector<float>());
 		processed = false;
 	}
 

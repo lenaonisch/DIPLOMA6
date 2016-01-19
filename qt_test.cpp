@@ -37,6 +37,9 @@ void qt_test::on_actionLoad_config_file_triggered()
          tr("Open config"), QDir::currentPath(), "All files (*.*);;Images (*.png *.xpm *.jpg)");
 
 	QFile file(fileName);
+	QFileInfo fi(file);
+	QDir::setCurrent(fi.absolutePath());
+	
     if (!file.open(QIODevice::ReadOnly)) {
         return;
     }
