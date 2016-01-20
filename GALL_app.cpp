@@ -405,6 +405,8 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	// Load image
 	cv::Mat img;
 	img = cv::imread(filename.c_str(),CV_LOAD_IMAGE_COLOR);
+	results.height = img.rows;
+	results.width = img.cols;
 	string short_name, ext;
 	getFilenameExt(filename, short_name, ext);
 	if(!img.data) {

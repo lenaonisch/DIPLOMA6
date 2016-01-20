@@ -30,6 +30,7 @@ public:
 	QList<QColor> colors;
 	bool processed;
 	vector<float> time;
+	int height, width;
 
 	Results():processed(false){}
 	void clear()

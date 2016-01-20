@@ -763,12 +763,12 @@ void qt_test::on_actionExport_detection_time_triggered()
 	{
 		ofstream out(filename);
 		if(out.is_open()) {
-			out<<"Filename;Total time;Voting time;"<<endl;
+			out<<"Filename;Height;Width;Total time;Voting time;"<<endl;
 			for (int i = 0; i < filepaths.size(); ++i)
 			{
 				out<<gall_forest_app.getFilename(filepaths[i]).c_str() << ";";
 				Results* res = &positive[filepaths[i]];	
-				out<<res->time[0] <<";"<<res->time[2]<<endl;
+				out<<res->height<<";"<<res->width<<";"<<res->time[0] <<";"<<res->time[2]<<endl;
 			}
 			out.close();
 		}
