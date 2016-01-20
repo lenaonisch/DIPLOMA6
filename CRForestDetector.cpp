@@ -196,6 +196,15 @@ try {
 	//delete ptRatio;
 }
 
+inline bool hides(cv::Rect r1, cv::Rect r2, float persent)
+{
+	cv::Rect inters = r1&r2;
+	int a_r1 = r1.width*r1.height;
+	int a_r2 = r2.width*r2.height;
+	int a_int = inters.width*inters.height;
+	return (a_r1 < a_r2) ? (float)a_int/a_r1 > persent : (float)a_int/a_r2 > persent;
+}
+
 // img - input image
 // scales - scales to detect objects with different sizes
 // vImgDetect [0..scales], inside vector is for different classes
@@ -249,8 +258,9 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			cv::split(tmps, vImgDetect[i]);
 			for (int c = 0; c<num_of_classes;c++)
 			{
-				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, testParam.out_scale/10000.0f);
+				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, 1/100.0f);
 				GaussianBlur(vImgDetect[i][c], vImgDetect[i][c], cv::Size(testParam.kernel, testParam.kernel), 0);
+				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, testParam.out_scale/100.0f);
 			}
 			tmps.release();
 
@@ -288,12 +298,17 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 		for (int i = maxs.size()-1; i > 0; i--)
 		{
 			int cl = maxs[i].class_label;
-			int w = width_aver[cl];
+			int w = width_aver[cl]/maxs[i].scale;
 			int h = w*maxs[i].ratio;
 			cv::Rect rect(maxs[i].point.x-w/2, maxs[i].point.y-h/2, w,h);
 			for (int j = 0; j < i;j++)
 			{
-				if (rect.contains(maxs[j].point)) 
+				int cl2 = maxs[j].class_label;
+				int w2 = width_aver[cl2]/maxs[j].scale;
+				int h2 = w2*maxs[j].ratio;
+				cv::Rect rect2(maxs[j].point.x-w2/2, maxs[j].point.y-h2/2, w2,h2);
+
+				if (hides(rect, rect2, 0.75f) )
 				{
 					if (maxs[j].pf > maxs[i].pf)
 					{
