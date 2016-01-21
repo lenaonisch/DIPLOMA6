@@ -53,7 +53,7 @@ inline int regression_leaf_index(array_view<unsigned int, 1> vImgView,
 }
 
 // imgDetect - vector.size == num_of_classes
-int CRForestDetector::detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios) {
+int CRForestDetector::detectColor(cv::Mat img, cv::Size size, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios) {
 
 	//// extract features
 	//cv::Mat vImg;
@@ -99,25 +99,18 @@ try {
 	}
 
 	// reset output image
-	imgDetect = cv::Mat::zeros(size, CV_32SC(num_of_classes)); // CV_32FC1 !!
+	imgDetect.resize(num_of_classes);
+	ratios.resize(num_of_classes);
+	for (int i = 0; i<num_of_classes; i++)
+	{
+		imgDetect[i] = cv::Mat::zeros(size, CV_32SC1); // CV_32FC1 !!
+		ratios[i] = cv::Mat::zeros(size, CV_32SC1);
+	}
 	const int num_of_classes_ = num_of_classes;
-	int numclass2 = num_of_classes*2;
-	ratios = cv::Mat::zeros(size, CV_32SC(num_of_classes));
-
 	int xoffset = width/2;
 	int yoffset = height/2;
 	
 	//int cx, cy; // x,y top left; cx,cy center of patch
-
-	// output image vImgDetect
-	concurrency::extent<3> e_ptDet(size.height, size.width, num_of_classes);
-	array_view<int, 3> ptDetView(e_ptDet, (int*)imgDetect.data);
-	//ptDetView.discard_data();
-
-	// output matrices ratio
-	concurrency::extent<3> e_ptRatio(size.height, size.width, num_of_classes);
-	array_view<unsigned int, 3> ptRatioView(e_ptRatio,  reinterpret_cast<unsigned int*>(ratios.data));
-	//ptRatioView.discard_data();
 
 	// treetable
 	concurrency::extent<2> e_treetable(crForest->vTrees.size(), crForest->amp_treetable.cols);
@@ -129,6 +122,16 @@ try {
 	concurrency::extent<3> e_main(tree_count, img.rows-height, img.cols-width);
 	for (int c = 0; c < num_of_classes_; c++)
 	{
+		// output image vImgDetect
+		concurrency::extent<2> e_ptDet(size.height, size.width);
+		array_view<int, 2> ptDetView(e_ptDet, (int*)imgDetect[c].data);
+		//ptDetView.discard_data();
+
+		// output matrices ratio
+		concurrency::extent<2> e_ptRatio(size.height, size.width);
+		array_view<unsigned int, 2> ptRatioView(e_ptRatio,  reinterpret_cast<unsigned int*>(ratios[c].data));
+		//ptRatioView.discard_data();
+
 		// leafs
 		concurrency::extent<2> e_leafs(crForest->vTrees.size(), crForest->amp_leafs[c].cols);
 		array_view<const int, 2> leafsView(e_leafs, (int*)crForest->amp_leafs[c].data);
@@ -158,12 +161,12 @@ try {
 						if(y_ >= 0 && y_ < rows && x_ >= 0 && x_ < cols)
 						{
 							//atomic_fetch_add(&ptDetView[index<3>(y_, x_, c)], w);
-							ptDetView[index<3>(y_, x_, c)] += w;
-							int t = ptRatioView[index<3>(y_, x_, c)];
+							ptDetView[index<2>(y_, x_)] += w;
+							int t = ptRatioView[index<2>(y_, x_)];
 							// get first short: (t >> 16) & 0x0000FFFF
 							//get second short: t & 0x0000FFFF
 							// int combineddata = ((first<<16) | ((second) & 0xffff));
-							ptRatioView[index<3>(y_, x_, c)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
+							ptRatioView[index<2>(y_, x_)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
 						}
 					}
 				} // end if
@@ -236,15 +239,15 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 		{
 			init_maps = clock();
 			// mats for classes and [i] scale
-			cv::Mat tmps;
+			vector<cv::Mat> tmps;
 			vImgDetect[i].resize(num_of_classes);
 			cv::Size scaled_size(int(img.cols*scales[i]+0.5),int(img.rows*scales[i]+0.5));
 			//tmps.create (scaled_size, CV_32FC(num_of_classes) );
 
-			cv::Mat cLevel (tmps.rows, tmps.cols, CV_8UC3);				
+			cv::Mat cLevel;// (scaled_size.height, scaled_size.width, CV_8UC3);				
 			cv::resize( img, cLevel, scaled_size);//CV_INTER_LINEAR is default
 			
-			cv::Mat ratios;
+			vector<cv::Mat> ratios;
 
 			init_maps = clock() - init_maps;
 			result.time[1] += init_maps;
@@ -255,15 +258,14 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			detecCol = clock() - detecCol;
 			result.time[3] += detecCol;
 
-			cv::split(tmps, vImgDetect[i]);
+			//cv::split(tmps, vImgDetect[i]);
 			for (int c = 0; c<num_of_classes;c++)
 			{
-				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, 1/100.0f);
-				GaussianBlur(vImgDetect[i][c], vImgDetect[i][c], cv::Size(testParam.kernel, testParam.kernel), 0);
-				vImgDetect[i][c].convertTo(vImgDetect[i][c], CV_8UC1, testParam.out_scale/100.0f);
+				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, 1/100.0f);
+				GaussianBlur(vImgDetect[i][c], tmps[c], cv::Size(testParam.kernel, testParam.kernel), 0);
+				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, testParam.out_scale/100.0f);
+				tmps[c].release();
 			}
-			tmps.release();
-
 			
 			localmax = clock();
 			for (int c = 0; c < num_of_classes; c++)
@@ -272,11 +274,10 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			result.time[4] = localmax;
 
 			maxFind = clock();
-			int step = ratios.step1();
 			for (int k = maxs.size()-1; k>=max_index;k--)
 			{
 				int cl = maxs[k].class_label;
-				unsigned int rat = ratios.at<unsigned int>(maxs[k].point.y, maxs[k].point.x);
+				unsigned int rat = ratios[cl].at<unsigned int>(maxs[k].point.y, maxs[k].point.x);
 				ushort vec[] = {(rat >> 16) & 0x0000FFFF, rat & 0x0000FFFF};
 				maxs[k].ratio = vec[0]/(float)(vec[1]*10);
 				maxs[k].point.x /= scales[i];
@@ -288,7 +289,9 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 			maxFind = clock()-maxFind;
 			result.time[5]+=maxFind;
 
-			ratios.release();
+			for (int z = 0; z < ratios.size(); z++)
+				ratios[z].release();
+			ratios.clear();
 				
 			cLevel.release();
 		}

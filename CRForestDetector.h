@@ -98,7 +98,7 @@ public:
 	TestParam testParam;
 private:
 	// returns time
-	int detectColor(cv::Mat img, cv::Size size, cv::Mat& imgDetect, cv::Mat& ratios); 
+	int detectColor(cv::Mat img, cv::Size size, vector<cv::Mat>& imgDetect, vector<cv::Mat>& ratios); 
 	const CRForest* crForest;
 	int width;
 	int height;
