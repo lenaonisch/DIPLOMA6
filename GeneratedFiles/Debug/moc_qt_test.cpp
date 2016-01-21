@@ -20,8 +20,8 @@
 
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_qt_test_t {
-    QByteArrayData data[21];
-    char stringdata0[565];
+    QByteArrayData data[23];
+    char stringdata0[646];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -50,7 +50,9 @@ QT_MOC_LITERAL(16, 416, 28), // "on_btnDropAllResults_clicked"
 QT_MOC_LITERAL(17, 445, 20), // "on_btnRemove_clicked"
 QT_MOC_LITERAL(18, 466, 22), // "on_treeResults_clicked"
 QT_MOC_LITERAL(19, 489, 34), // "on_actionSave_rectangles_trig..."
-QT_MOC_LITERAL(20, 524, 40) // "on_actionExport_detection_tim..."
+QT_MOC_LITERAL(20, 524, 40), // "on_actionExport_detection_tim..."
+QT_MOC_LITERAL(21, 565, 45), // "on_actionBatch_detect_several..."
+QT_MOC_LITERAL(22, 611, 34) // "on_actionLoad_rectangles_trig..."
 
     },
     "qt_test\0on_actionOpen_triggered\0\0"
@@ -70,7 +72,9 @@ QT_MOC_LITERAL(20, 524, 40) // "on_actionExport_detection_tim..."
     "on_btnDropAllResults_clicked\0"
     "on_btnRemove_clicked\0on_treeResults_clicked\0"
     "on_actionSave_rectangles_triggered\0"
-    "on_actionExport_detection_time_triggered"
+    "on_actionExport_detection_time_triggered\0"
+    "on_actionBatch_detect_several_param_triggered\0"
+    "on_actionLoad_rectangles_triggered"
 };
 #undef QT_MOC_LITERAL
 
@@ -80,7 +84,7 @@ static const uint qt_meta_data_qt_test[] = {
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-      19,   14, // methods
+      21,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -88,27 +92,31 @@ static const uint qt_meta_data_qt_test[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags
-       1,    0,  109,    2, 0x0a /* Public */,
-       3,    0,  110,    2, 0x0a /* Public */,
-       4,    0,  111,    2, 0x0a /* Public */,
-       5,    0,  112,    2, 0x0a /* Public */,
-       6,    0,  113,    2, 0x0a /* Public */,
-       7,    0,  114,    2, 0x0a /* Public */,
-       8,    0,  115,    2, 0x0a /* Public */,
-       9,    0,  116,    2, 0x0a /* Public */,
-      10,    0,  117,    2, 0x0a /* Public */,
-      11,    0,  118,    2, 0x0a /* Public */,
-      12,    0,  119,    2, 0x0a /* Public */,
-      13,    0,  120,    2, 0x0a /* Public */,
-      14,    0,  121,    2, 0x0a /* Public */,
-      15,    0,  122,    2, 0x0a /* Public */,
-      16,    0,  123,    2, 0x0a /* Public */,
-      17,    0,  124,    2, 0x0a /* Public */,
-      18,    0,  125,    2, 0x0a /* Public */,
-      19,    0,  126,    2, 0x0a /* Public */,
-      20,    0,  127,    2, 0x0a /* Public */,
+       1,    0,  119,    2, 0x0a /* Public */,
+       3,    0,  120,    2, 0x0a /* Public */,
+       4,    0,  121,    2, 0x0a /* Public */,
+       5,    0,  122,    2, 0x0a /* Public */,
+       6,    0,  123,    2, 0x0a /* Public */,
+       7,    0,  124,    2, 0x0a /* Public */,
+       8,    0,  125,    2, 0x0a /* Public */,
+       9,    0,  126,    2, 0x0a /* Public */,
+      10,    0,  127,    2, 0x0a /* Public */,
+      11,    0,  128,    2, 0x0a /* Public */,
+      12,    0,  129,    2, 0x0a /* Public */,
+      13,    0,  130,    2, 0x0a /* Public */,
+      14,    0,  131,    2, 0x0a /* Public */,
+      15,    0,  132,    2, 0x0a /* Public */,
+      16,    0,  133,    2, 0x0a /* Public */,
+      17,    0,  134,    2, 0x0a /* Public */,
+      18,    0,  135,    2, 0x0a /* Public */,
+      19,    0,  136,    2, 0x0a /* Public */,
+      20,    0,  137,    2, 0x0a /* Public */,
+      21,    0,  138,    2, 0x0a /* Public */,
+      22,    0,  139,    2, 0x0a /* Public */,
 
  // slots: parameters
+    QMetaType::Void,
+    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -157,6 +165,8 @@ void qt_test::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, voi
         case 16: _t->on_treeResults_clicked(); break;
         case 17: _t->on_actionSave_rectangles_triggered(); break;
         case 18: _t->on_actionExport_detection_time_triggered(); break;
+        case 19: _t->on_actionBatch_detect_several_param_triggered(); break;
+        case 20: _t->on_actionLoad_rectangles_triggered(); break;
         default: ;
         }
     }
@@ -188,13 +198,13 @@ int qt_test::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 19)
+        if (_id < 21)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 19;
+        _id -= 21;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 19)
+        if (_id < 21)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 19;
+        _id -= 21;
     }
     return _id;
 }

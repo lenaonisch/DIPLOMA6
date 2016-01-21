@@ -86,7 +86,9 @@ void GALL_app::loadConfig(string filename)
 		// File with postive examples
 		in.getline(buffer,400);
 		in.getline(buffer,400);
-		trainposfiles = buffer;
+		string temp = buffer;
+		trainposfiles = configpath;
+		trainposfiles+=temp;
 		// Subset of positive images -1: all images
 		in.getline(buffer,400);
 		in >> subsamples_pos;
@@ -273,9 +275,7 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 								std::vector<int>& width_aver = vector<int>()) {
 
 	unsigned int size; 
-	string sfiles (configpath);
-	sfiles+=trainposfiles;
-	FILE * pFile = fopen (sfiles.c_str(),"r");
+	FILE * pFile = fopen (trainposfiles.c_str(),"r");
 	
 	if (pFile != NULL)
 	{
@@ -331,10 +331,10 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 
 		if (fclose (pFile) != 0)
 		{
-			throw string_exception("Failed to close " + sfiles);
+			throw string_exception("Failed to close " + trainposfiles);
 		}
 	} else {
-		throw string_exception("File not found " + sfiles);
+		throw string_exception("File not found " + trainposfiles);
 	}
 }
 
@@ -377,7 +377,7 @@ void GALL_app::loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv:
 
 		in.close();
 	} else {
-		throw string_exception("File not found " + trainposfiles);
+		throw string_exception("File not found " + trainnegfiles);
 	}
 }
 

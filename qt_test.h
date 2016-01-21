@@ -39,6 +39,7 @@ public:
 	void GetSelectedImageResult(string& img_name, int& img_index, int& res_index);
 	void GetSelectedImageResult(int& img_index, int& res_index);
 	void GetSelectedImageResult(int& img_index);
+	void SaveRects(string filenamePos, string filenameNeg);
 private:
 	Ui::qt_testClass ui;
 	double scaleFactor;
@@ -170,6 +171,9 @@ public slots:
 	void on_treeResults_clicked();
 	void on_actionSave_rectangles_triggered();
 	void on_actionExport_detection_time_triggered();
+	void on_actionBatch_detect_several_param_triggered();
+	void on_actionLoad_rectangles_triggered();
+	void on_actionExpand_all_triggered();
 };
 
 #endif // QT_TEST_H

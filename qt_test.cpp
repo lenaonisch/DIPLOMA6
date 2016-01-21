@@ -24,6 +24,13 @@ qt_test::qt_test(QWidget *parent)
 	strList.append("Voting time");
 	ui.treeResults->setHeaderLabels(strList);
 	ui.treeResults->header()->show();
+
+	ui.treeResults->addAction(ui.actionExpand_all);
+}
+
+void qt_test::on_actionExpand_all_triggered()
+{
+	ui.treeResults->expandAll();
 }
 
 qt_test::~qt_test()
@@ -195,6 +202,108 @@ void qt_test::on_actionBatch_detect_triggered()
 	}
 }
 
+void qt_test::on_actionBatch_detect_several_param_triggered()
+{
+	try
+	{
+		last_selected_result = -1;
+		if (filepaths.size() == 0)
+		{
+			ShowMessage("No files loaded!");
+			return;
+		}
+		for (int i = 0; i < filepaths.size(); i++)
+			positive[filepaths[i]].processed = false;// workaroung to initialize positive variable
+		
+		TestParam param;
+		param.bSaveHoughSpace = false;
+		param.prob_threshold = 0;
+		int out_scale[] = {50,50,70,70,90, 90, 90, 90, 100,100,100};
+		int threshold[] = {70,85,85,95,110,120,135,145,140,150,160};
+		int kernel[]	= {5, 5, 5, 5, 7,  7,  7,  7,  7,  7,  7};
+
+		for (int i = 0; i<16; i++)
+		{
+			// parameters
+			param.out_scale = out_scale[i];
+			param.max_treshold = threshold[i];
+			param.kernel = kernel[i];
+			//detection
+			gall_forest_app.crDetect.testParam = param;
+			gall_forest_app.run_detect(have_forest, positive);
+			// save results
+			QString fileNamePos = QString("%1%2%3%4%5%6")
+				.arg(QDir::currentPath())
+				.arg("/results/")
+				.arg(param.out_scale)
+				.arg(param.max_treshold)
+				.arg(param.kernel)
+				.arg("positive.txt");
+			QString fileNameNeg = QString("%1%2%3%4%5%6")
+				.arg(QDir::currentPath())
+				.arg("/results/")
+				.arg(param.out_scale)
+				.arg(param.max_treshold)
+				.arg(param.kernel)
+				.arg("negative.txt");
+
+			string filenamePos = fileNamePos.toLocal8Bit().constData();
+			string filenameNeg = fileNameNeg.toLocal8Bit().constData();
+			SaveRects(filenamePos, filenameNeg);
+			// clear results
+			on_btnDropAllResults_clicked();
+		}
+	}
+	catch (exception& e)
+	{
+		ShowMessage(e.what(), 2);
+	}
+}
+
+void qt_test::on_actionLoad_rectangles_triggered()
+{
+	QString fileName = QFileDialog::getOpenFileName(this,
+         tr("Load rectangles"), QDir::currentPath(), "All files (*.*);;Images (*.png *.xpm *.jpg)");
+
+	QFile file(fileName);
+	QFileInfo fi(file);
+	QDir::setCurrent(fi.absolutePath());
+	
+    if (!file.open(QIODevice::ReadOnly)) {
+        return;
+    }
+
+	string filename = fileName.toLocal8Bit().constData();
+	try
+	{
+		std::vector<string> vFilenames; 
+		std::vector<cv::Rect> vBBox; 
+		std::vector<unsigned int> vClassNums;
+		std::vector<int> width_aver;
+		string temp = gall_forest_app.trainposfiles;
+		gall_forest_app.trainposfiles = filename;
+		gall_forest_app.loadTrainPosFile(vFilenames, vBBox, vClassNums, width_aver);
+		filepaths.clear();
+		positive.clear();
+		for (int i = 0; i<vFilenames.size();i++)
+		{
+			string filepath = gall_forest_app.configpath + gall_forest_app.impath + "/" + vFilenames[i];
+			if (std::find(filepaths.begin(), filepaths.end(), filepath) == filepaths.end())
+				filepaths.push_back(filepath);
+			positive[filepath].processed = true;
+			positive[filepath].push_back(vClassNums[i], vBBox[i], GREEN);
+			
+		}
+		
+		DisplayPositiveFiles();
+		gall_forest_app.trainposfiles = temp;
+	}
+	catch (exception& e)
+	{
+		ShowMessage(e.what(),2);
+	}
+}
+
 void qt_test::on_actionDetect_triggered()
 {
 	/*try
@@ -321,7 +430,9 @@ void qt_test::DrawRect(cv::Rect rect, int class_, QColor color)
 	QPixmap pixmap = *(ui.lblInput->pixmap());
 	QPainter painter(&pixmap);              
 
-	painter.setPen(color);
+	QPen pen(color);
+	pen.setWidth(3);
+	painter.setPen(pen);
 	QRect qrect(rect.x, rect.y, rect.width, rect.height);
 	painter.drawRect(qrect);
 	if (class_ < num_of_classes)
@@ -339,7 +450,9 @@ void qt_test::DrawRects(Results* res)
 	{
 		for (int i = 0; i < res->rects.size(); i++)
 		{
-			painter.setPen(res->colors[i]);
+			QPen pen(res->colors[i]);
+			pen.setWidth(3);
+			painter.setPen(pen);
 			QRect qrect(res->rects[i].x, res->rects[i].y, res->rects[i].width, res->rects[i].height);
 			painter.drawRect(qrect);
 			if (res->classes[i] < num_of_classes)
@@ -706,15 +819,8 @@ void qt_test::on_btnRemove_clicked()
 	}
 }
 
-void qt_test::on_actionSave_rectangles_triggered()
+void qt_test::SaveRects(string filenamePos, string filenameNeg)
 {
-	QString fileNamePos = QFileDialog::getSaveFileName(this,
-         tr("Save detected and marked POSITIVE rectangles"), QDir::currentPath()+"/positive_detected.txt", "Text files (*.txt);");
-	QString fileNameNeg = QFileDialog::getSaveFileName(this,
-         tr("Save detected and marked NEGATIVE rectangles"), QDir::currentPath()+"/negative_detected.txt", "Text files (*.txt);");
-
-	string filenamePos = fileNamePos.toLocal8Bit().constData();
-	string filenameNeg = fileNameNeg.toLocal8Bit().constData();
 	try
 	{
 		ofstream outPos(filenamePos);
@@ -751,6 +857,19 @@ void qt_test::on_actionSave_rectangles_triggered()
 	{
 		ShowMessage(e.what(),2);
 	}
+}
+
+void qt_test::on_actionSave_rectangles_triggered()
+{
+	QString fileNamePos = QFileDialog::getSaveFileName(this,
+         tr("Save detected and marked POSITIVE rectangles"), QDir::currentPath()+"/positive_detected.txt", "Text files (*.txt);");
+	QString fileNameNeg = QFileDialog::getSaveFileName(this,
+         tr("Save detected and marked NEGATIVE rectangles"), QDir::currentPath()+"/negative_detected.txt", "Text files (*.txt);");
+
+	string filenamePos = fileNamePos.toLocal8Bit().constData();
+	string filenameNeg = fileNameNeg.toLocal8Bit().constData();
+	
+	SaveRects(filenamePos, filenameNeg);
 }
 
 void qt_test::on_actionExport_detection_time_triggered()

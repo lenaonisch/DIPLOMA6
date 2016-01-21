@@ -52,6 +52,9 @@ public:
     QAction *actionSave_rectangles;
     QAction *actionSave_results;
     QAction *actionExport_detection_time;
+    QAction *actionBatch_detect_several_param;
+    QAction *actionLoad_rectangles;
+    QAction *actionExpand_all;
     QWidget *centralWidget;
     QHBoxLayout *horizontalLayout_2;
     QTabWidget *tabWidget;
@@ -146,6 +149,12 @@ public:
         actionSave_results->setObjectName(QStringLiteral("actionSave_results"));
         actionExport_detection_time = new QAction(qt_testClass);
         actionExport_detection_time->setObjectName(QStringLiteral("actionExport_detection_time"));
+        actionBatch_detect_several_param = new QAction(qt_testClass);
+        actionBatch_detect_several_param->setObjectName(QStringLiteral("actionBatch_detect_several_param"));
+        actionLoad_rectangles = new QAction(qt_testClass);
+        actionLoad_rectangles->setObjectName(QStringLiteral("actionLoad_rectangles"));
+        actionExpand_all = new QAction(qt_testClass);
+        actionExpand_all->setObjectName(QStringLiteral("actionExpand_all"));
         centralWidget = new QWidget(qt_testClass);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         horizontalLayout_2 = new QHBoxLayout(centralWidget);
@@ -229,6 +238,7 @@ public:
         __qtreewidgetitem->setText(0, QStringLiteral("1"));
         treeResults->setHeaderItem(__qtreewidgetitem);
         treeResults->setObjectName(QStringLiteral("treeResults"));
+        treeResults->setContextMenuPolicy(Qt::ActionsContextMenu);
         treeResults->setUniformRowHeights(true);
         treeResults->setHeaderHidden(true);
 
@@ -304,6 +314,7 @@ public:
         menuFile->addAction(actionOpen);
         menuFile->addAction(actionDetect);
         menuFile->addAction(actionBatch_detect);
+        menuFile->addAction(actionBatch_detect_several_param);
         menuFile->addSeparator();
         menuFile->addAction(actionAdd_positive);
         menuFile->addAction(actionAdd_negative);
@@ -311,6 +322,7 @@ public:
         menuFile->addAction(actionDrop_All_results);
         menuFile->addSeparator();
         menuFile->addAction(actionExport_detection_time);
+        menuFile->addAction(actionLoad_rectangles);
         menuSetup->addAction(actionLoad_config_file);
         menuSetup->addAction(actionTrain);
         menuSetup->addAction(actionLoad_test_images);
@@ -318,6 +330,8 @@ public:
         menuView->addAction(actionZoom_in_2);
         menuView->addAction(actionZoom_out_2);
         menuView->addAction(actionRefresh);
+        menuView->addSeparator();
+        menuView->addAction(actionExpand_all);
 
         retranslateUi(qt_testClass);
         QObject::connect(actionAdd_positive, SIGNAL(triggered()), btnAddPositive, SLOT(click()));
@@ -355,11 +369,15 @@ public:
         actionRefresh->setText(QApplication::translate("qt_testClass", "Refresh", 0));
         actionAdd_positive->setText(QApplication::translate("qt_testClass", "Add positive", 0));
         actionAdd_negative->setText(QApplication::translate("qt_testClass", "Add negative", 0));
+        actionAdd_negative->setShortcut(QApplication::translate("qt_testClass", "Alt+N", 0));
         actionRemove->setText(QApplication::translate("qt_testClass", "Remove", 0));
         actionDrop_All_results->setText(QApplication::translate("qt_testClass", "Drop All results", 0));
         actionSave_rectangles->setText(QApplication::translate("qt_testClass", "Save rectangles", 0));
         actionSave_results->setText(QApplication::translate("qt_testClass", "Save results", 0));
         actionExport_detection_time->setText(QApplication::translate("qt_testClass", "Export detection time", 0));
+        actionBatch_detect_several_param->setText(QApplication::translate("qt_testClass", "Batch detect several param", 0));
+        actionLoad_rectangles->setText(QApplication::translate("qt_testClass", "Load rectangles", 0));
+        actionExpand_all->setText(QApplication::translate("qt_testClass", "Expand all", 0));
 #ifndef QT_NO_TOOLTIP
         btnAddPositive->setToolTip(QApplication::translate("qt_testClass", "Add positive example", 0));
 #endif // QT_NO_TOOLTIP
