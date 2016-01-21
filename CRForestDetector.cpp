@@ -295,7 +295,21 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 
 		// convert to Results
 		result.time[6] = clock();
-		for (int i = maxs.size()-1; i > 0; i--)
+		ConvertToTesults(maxs, result);
+		result.time[6] = clock() - result.time[6];
+
+		maxs.clear();
+		//timers[0] = (double)(clock() - timers[0])/CLOCKS_PER_SEC;
+		result.time[0] = clock() - result.time[0];
+
+		for (int i = 0; i<result.time.size(); i++)
+			result.time[i] /= CLOCKS_PER_SEC;
+	}
+}
+
+void CRForestDetector::ConvertToTesults(vector<MaxPoint>& maxs,Results& result)
+{
+	for (int i = maxs.size()-1; i > 0; i--)
 		{
 			int cl = maxs[i].class_label;
 			int w = width_aver[cl]/maxs[i].scale;
@@ -332,15 +346,6 @@ void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<
 				result.rects.push_back(cv::Rect(maxs[j].point.x - w/2, maxs[j].point.y - h/2, w, h));
 			}
 		}
-		result.time[6] = clock() - result.time[6];
-
-		maxs.clear();
-		//timers[0] = (double)(clock() - timers[0])/CLOCKS_PER_SEC;
-		result.time[0] = clock() - result.time[0];
-
-		for (int i = 0; i<result.time.size(); i++)
-			result.time[i] /= CLOCKS_PER_SEC;
-	}
 }
 
 int CRForestDetector::maxUsedValInHistogramData(cv::Mat src)

@@ -48,6 +48,7 @@ public:
 	void detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat> >& imgDetect, Results& result);
 	int maxUsedValInHistogramData(cv::Mat src);
 	bool localMaxima(cv::Mat src, cv::Size size, vector<MaxPoint>& locations, int class_label, int threshold);
+	void ConvertToTesults(vector<MaxPoint>& maxs,Results& result);
 
 	void save(const char* filename) {
 		ofstream out(filename);
