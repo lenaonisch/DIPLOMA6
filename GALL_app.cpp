@@ -551,13 +551,14 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	vector<unsigned int> vClassNums; // to what class object belongs
 
 	ofstream outUnused(configpath+"/unused.txt");
+	ofstream outUnusedRects(configpath+"/unusedRects.txt");
 	ofstream outUsed(configpath+"/used.txt");
 
 	// load positive file list
 	if (width_aver.size() == 0)
 		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums, width_aver);
 	else
-		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums); // all images will be resized to one width pointed in config file
+		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums, width_aver); // all images will be resized to one width pointed in config file
 
 	if (subsamples_pos > 0)
 		subsamples_pos = vFilenames.size()*subsamples_pos/100.0f;
@@ -622,11 +623,20 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	  }	
 		else
 		{
+			if (outUnusedRects.is_open())
+			{
+				outUnusedRects<<vFilenames[i]<<" ";
+				outUnusedRects<< vBBox[i].x <<" "<< vBBox[i].y<<" "<< vBBox[i].width<<" "<<vBBox[i].height<<" "<<vClassNums[i]<<endl;
+			}
+
 			if(outUnused.is_open())
 			{
 				outUnused<<vFilenames[i]<<endl;
 			}
 		}
+	}
+	if(outUnusedRects.is_open()){
+		outUnusedRects.close();
 	}
 	if(outUnused.is_open()){
 		outUnused.close();
