@@ -115,7 +115,14 @@ try {
 	// treetable
 	concurrency::extent<2> e_treetable(crForest->vTrees.size(), crForest->amp_treetable.cols);
 	array_view<const int, 2> treetableView(e_treetable, (int*)crForest->amp_treetable.data);
-	
+	// leafs
+	concurrency::extent<2> e_leafs(crForest->vTrees.size(), crForest->amp_leafs.cols);
+	array_view<const int, 2> leafsView(e_leafs, (int*)crForest->amp_leafs.data);
+	// leafpointer
+	concurrency::extent<2> e_leafpointer(crForest->vTrees.size(), crForest->amp_leafpointer.cols);
+	array_view<const int, 2> leafpointerView(e_leafpointer, (int*)crForest->amp_leafpointer.data);
+
+
 	float prob_threshold = testParam.prob_threshold;
 
 	int tree_count = crForest->vTrees.size();
@@ -132,12 +139,6 @@ try {
 		array_view<unsigned int, 2> ptRatioView(e_ptRatio,  reinterpret_cast<unsigned int*>(ratios[c].data));
 		//ptRatioView.discard_data();
 
-		// leafs
-		concurrency::extent<2> e_leafs(crForest->vTrees.size(), crForest->amp_leafs[c].cols);
-		array_view<const int, 2> leafsView(e_leafs, (int*)crForest->amp_leafs[c].data);
-		// leafpointer
-		concurrency::extent<2> e_leafpointer(crForest->vTrees.size(), crForest->amp_leafpointer[c].cols);
-		array_view<const int, 2> leafpointerView(e_leafpointer, (int*)crForest->amp_leafpointer[c].data);
 		//accelerator_view av = accelerator(accelerator::direct3d_warp).create_view(queuing_mode_immediate); // this solution slows in 2 times!
 		parallel_for_each(/*av, */e_main, [=](index<3>idx) restrict (amp)
 		{
@@ -146,13 +147,18 @@ try {
 			// To speed up the voting, one can vote only for patches 
 				// with a probability for foreground > 0.5
 				// 
-			if (leaf[index<2>(0, 0)] > prob_threshold)
-				{
+			/*if (leaf[index<2>(0, 0)] > prob_threshold)
+				{*/
 					// voting weight for leaf 
-					int ind = 2; // indexation from zero, so formula isn't (2*num_of_classes + 1)
-					int cntr_size = leaf[index<2>(0, 2)];
-					int w = leaf[index<2>(0, 0)]/float(cntr_size * tree_count);
-					int r = leaf[index<2>(0, 1)];
+					int ind = 2*num_of_classes_; // indexation from zero, so formula isn't (2*num_of_classes + 1)
+					int cntr_size = leaf[index<2>(0, ind)];
+					for (int z = 1; z < num_of_classes_; z++)
+					{
+						ind += cntr_size*2+1;
+						cntr_size = leaf[index<2>(0, ind)];
+					}
+					int w = leaf[index<2>(0, 2*c)]/float(cntr_size * tree_count);
+					int r = leaf[index<2>(0, 2*c+1)];
 
 					while(cntr_size-- > 0)
 					{	
@@ -169,7 +175,7 @@ try {
 							ptRatioView[index<2>(y_, x_)] = (((((t >> 16) & 0xFFFF) + r) <<16) | (((t & 0xFFFF) + 1) & 0xFFFF));
 						}
 					}
-				} // end if
+				//} // end if
 		});
 		ptDetView.synchronize();
 		ptRatioView.synchronize();

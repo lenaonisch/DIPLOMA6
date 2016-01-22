@@ -13,10 +13,10 @@ public:
 	// Constructors
 	CRForest(int trees = 0) {
 		vTrees.resize(trees);
-		amp_leafs.resize(num_of_classes); // each Mat in vector - for each class of objects
-		amp_leafs_step = new int[num_of_classes];
-		amp_leafpointer.resize(num_of_classes);
-		amp_leafpointer_step = new int[num_of_classes];
+		//amp_leafs.resize(num_of_classes); // each Mat in vector - for each class of objects
+		//amp_leafs_step = new int[num_of_classes];
+		//amp_leafpointer.resize(num_of_classes);
+		//amp_leafpointer_step = new int[num_of_classes];
 	}
 
 	CRForest& operator=(CRForest& right) { // copy/move constructor is called to construct arg
@@ -32,13 +32,8 @@ public:
 		for(std::vector<CRTree*>::iterator it = vTrees.begin(); it != vTrees.end(); ++it) delete *it;
 		vTrees.clear();
 		amp_treetable.release();
-		for (int i = 0; i<amp_leafs.size();i++)
-		{
-			amp_leafs[i].release(); // each Mat in vector - for each class of objects
-			amp_leafpointer[i].release();
-		}
-		delete amp_leafs_step;
-		delete amp_leafpointer_step;
+		amp_leafs.release();
+		amp_leafpointer.release();
 	}
 
 	// Set/Get functions
@@ -67,11 +62,11 @@ public:
 	int max_treetable_len;
 	int amp_treetable_step1;
 
-	vector<cv::Mat> amp_leafs; // each Mat in vector - for each class of objects
-	int* amp_leafs_step;
+	cv::Mat amp_leafs;
+	int amp_leafs_step;
 	int max_num_leaf;
-	vector<cv::Mat> amp_leafpointer;
-	int* amp_leafpointer_step;
+	cv::Mat amp_leafpointer;
+	int amp_leafpointer_step;
 };
 
 inline void CRForest::regression(std::vector<const LeafNode*>& result, uchar** ptFCh, int stepImg) const{
@@ -128,18 +123,10 @@ inline void CRForest::loadForest(const char* filename) {
 	amp_treetable.create (trees, vTrees[0]->num_nodes*7, CV_32SC1);
 	amp_treetable_step1 = amp_treetable.step1();
 
-	amp_leafs.resize(num_of_classes); // each Mat in vector - for each class of objects
-	amp_leafs_step = new int[num_of_classes];
-	amp_leafpointer.resize(num_of_classes);
-	amp_leafpointer_step = new int[num_of_classes];
-
-	for (int i = 0; i<num_of_classes;i++)
-	{
-		amp_leafs[i].create (trees, 2 * vTrees[0]->center_count[i] + max_num_leaf * 3, CV_32SC1); 
-		amp_leafs_step[i] = amp_leafs[i].step1(); 
-		amp_leafpointer[i].create (trees, max_num_leaf+1, CV_32SC1); // +1 - for last position in amp_leafs array
-		amp_leafpointer_step[i] = amp_leafpointer[i].step1();
-	}
+	amp_leafs.create (trees, 2 * vTrees[0]->center_count + max_num_leaf * num_of_classes * 3, CV_32SC1); 
+	amp_leafs_step = amp_leafs.step1(); 
+	amp_leafpointer.create (trees, max_num_leaf+1, CV_32SC1); // +1 - for last position in amp_leafs array
+	amp_leafpointer_step = amp_leafpointer.step1();
 	for(unsigned int i=0; i < vTrees.size(); ++i)
 	{
 		vTrees[i]->ConvertTreeForPointers(i, amp_treetable, amp_leafs, amp_leafpointer);

@@ -47,7 +47,7 @@ public:
 			treetable[i] = 0;
 		// allocate memory for leafs
 		leaf = new LeafNode[(int)pow(2.0,int(max_depth))];
-		center_count = vector<int>(num_of_classes, 0);
+		center_count = 0;//vector<int>(num_of_classes, 0);
 		treetable_count = 0;
 	}
 
@@ -96,9 +96,9 @@ public:
 
 	//int* amp_leafs;
 	//unsigned int* amp_leafpointer;
-	vector<int> center_count; // each value in vector is for separate class ob objects
-
-	void ConvertTreeForPointers(int row, cv::Mat& treetable, vector<cv::Mat>& leafs, vector<cv::Mat>& leafpointer);
+	//vector<int> center_count; // each value in vector is for separate class ob objects
+	int center_count;
+	void ConvertTreeForPointers(int row, cv::Mat& treetable, cv::Mat& leafs, cv::Mat& leafpointer);
 private: 
 
 	// Private functions for training
