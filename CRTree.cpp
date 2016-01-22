@@ -14,6 +14,8 @@ using namespace std;
 // Read tree from file
 CRTree::CRTree(const char* filename) {
 	int dummy;
+	treetable_count = 0;
+	center_count = vector<int>(num_of_classes, 0);
 
 	FILE * pFile = fopen (filename,"r");
 	if (pFile != NULL)
@@ -31,7 +33,11 @@ CRTree::CRTree(const char* filename) {
 		for(unsigned int n=0; n<num_nodes; ++n) 
 		{
 			fscanf (pFile, "%i %i", &dummy, &dummy);
-			for(unsigned int i=0; i<7; ++i, ++ptT) {
+			fscanf (pFile, "%i", ptT); // 0th
+			if (ptT[0]!=0)
+				treetable_count++;
+			ptT++;
+			for(unsigned int i=1; i<7; ++i, ++ptT) {
 				fscanf (pFile, "%i", ptT);
 			}
 		}
@@ -53,6 +59,7 @@ CRTree::CRTree(const char* filename) {
 			for (int p = 0; p < num_of_classes; p++)
 			{
 				fscanf (pFile, " %c %i",  &symbol, &dummy); // "|" symbol, number of patches
+				center_count[p] += dummy;
 				ptLN->vCenter[p].resize(dummy);
 				for(int i=0; i<dummy; ++i)
 				{
@@ -141,14 +148,16 @@ void CRTree::growTree(const CRPatch& TrData, int samples) {
 	patch_size.width = TrData.vLPatches[0][0].vPatch[0].cols;
 	channels = TrData.vLPatches[0][0].vPatch.size();
 
-	vector<float> vRatio(num_of_classes+1);
-	vRatio[0] = 1;
+	vector<float> percentage(num_of_classes+1);
 	vector<vector<const PatchFeature*> > TrainSet( TrData.vLPatches.size() );
-	float n0 = TrData.vLPatches[0].size();
+	float n0 = 0;
+	for (int i = 0; i<TrData.vLPatches.size(); i++)
+		n0+=TrData.vLPatches[i].size();
+	
 	for(unsigned int l=0; l<TrainSet.size(); l++) {
 		TrainSet[l].resize(TrData.vLPatches[l].size());
 		
-		vRatio[l] = TrainSet[l].size()/n0;
+		percentage[l] = TrainSet[l].size()/n0;
 		
 		for(unsigned int i=0; i < TrainSet[l].size(); i++) {
 			TrainSet[l][i] = &TrData.vLPatches[l][i];
@@ -156,13 +165,13 @@ void CRTree::growTree(const CRPatch& TrData, int samples) {
 	}
 
 	// Grow tree
-	grow(TrainSet, 0, 0, samples, vRatio );
+	grow(TrainSet, 0, 0, samples, percentage );
 
 	//after tree was constructed we can count average size for classes
 }
 
 // Called by growTree
-void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, vector<float> vRatio)
+void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node, unsigned int depth, int samples, vector<float> percentage)
 {
 	int number_of_patches = 0;
 	int class_left = 0;
@@ -191,6 +200,7 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 	
 			// Store binary test for current node
 			int* ptT = &treetable[node*7];
+			treetable_count++;
 			ptT[0] = -1; ++ptT; 
 			for(int t=0; t<6; ++t)
 				ptT[t] = test[t];
@@ -204,56 +214,57 @@ void CRTree::grow(const vector<vector<const PatchFeature*> >& TrainSet, int node
 			// Go left
 			// If enough patches are left continue growing else stop
 			if(countA > min_samples) {
-				grow(SetA, 2*node+1, depth+1, samples, vRatio);
+				grow(SetA, 2*node+1, depth+1, samples, percentage);
 			} else {
-				makeLeaf(SetA, vRatio, 2*node+1);
+				makeLeaf(SetA, percentage, 2*node+1);
 			}
 
 			// Go right
 			// If enough patches are left continue growing else stop
 			if(countB > min_samples) {
-				grow(SetB, 2*node+2, depth+1, samples, vRatio);
+				grow(SetB, 2*node+2, depth+1, samples, percentage);
 			} else {
-				makeLeaf(SetB, vRatio, 2*node+2);
+				makeLeaf(SetB, percentage, 2*node+2);
 			}
 
 		} else {
 
 			// Could not find split (only invalid one leave split)
-			makeLeaf(TrainSet, vRatio, node);
+			makeLeaf(TrainSet, percentage, node);
 	
 		}	
 
 	} else {
 
 		// Only negative patches are left or maximum depth is reached
-		makeLeaf(TrainSet, vRatio, node);
+		makeLeaf(TrainSet, percentage, node);
 	
 	}
 }
 
 // Create leaf node from patches 
-void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, vector<float> vRatio, int node) {
+void CRTree::makeLeaf(const std::vector<std::vector<const PatchFeature*> >& TrainSet, vector<float> percentage, int node) {
 	// Get pointer
+	treetable_count++;
 	treetable[node*7] = num_leaf;
 	LeafNode* ptL = &leaf[num_leaf];
 
 	// Store data
-	vector<float> scaled_pb(num_of_classes, 0);
+	vector<float> scaled_pb(num_of_classes+1, 0);
 	ptL->pfg.resize(num_of_classes, 0);
 	ptL->vCenter.resize(num_of_classes);
 	ptL->vRatio.resize(num_of_classes);
 	float sum = 0;
-	for (int i = 0; i < num_of_classes; i++)
+	for (int i = 0; i <= num_of_classes; i++)
 	{
-		scaled_pb[i] = TrainSet[i].size()/vRatio[i];
+		scaled_pb[i] = TrainSet[i].size()/percentage[i];
 		sum += scaled_pb[i];
 	}
 	for (int i = 0; i < num_of_classes; i++)
 	{
-		if (sum != 0)
-			ptL->pfg[i] = scaled_pb[i] / sum;
+		ptL->pfg[i] = scaled_pb[i] / sum;
 		ptL->vCenter[i].resize( TrainSet[i].size() );
+		center_count[i] += TrainSet[i].size() ;
 		for(unsigned int k = 0; k<TrainSet[i].size(); k++)
 		{
 			ptL->vCenter[i][k] = TrainSet[i][k]->center;
@@ -523,4 +534,38 @@ void LeafNode::show(int delay, int width, int height) {
 			cvReleaseImage(&iShow[c]);
 		}
 	}
+}
+
+void CRTree::ConvertTreeForPointers(int row, cv::Mat& treetable, vector<cv::Mat>& leafs, vector<cv::Mat>& leafpointer)
+{
+	int* pnode = this->treetable;
+	int* table_ = (int*)treetable.data + treetable.step1()*row;
+	for (int i = 0; i < num_nodes*7; i++)
+		*table_++ = *pnode++;
+
+	//int * ptr = (int*)leafs.data + leafs.step1()*row;
+	//int * pointer_ptr = (int*)leafpointer.data + leafpointer.step1()*row;
+	vector<int> pos = vector<int>(num_of_classes,0);
+	for (int l = 0; l < num_leaf; l++)
+	{
+		for (int k = 0; k<num_of_classes;k++)
+		{
+			leafpointer[k].at<int>(row, l) = pos[k];
+			
+			int * ptr = (int*)leafs[k].data + leafs[k].step1()*row + pos[k];
+			*ptr++ = leaf[l].pfg[k]*10000;
+			*ptr++ = leaf[l].vRatio[k]*10;
+
+			int c_size = leaf[l].vCenter[k].size();
+			*ptr++ = c_size;
+			for (int c = 0; c < c_size; c++)
+			{
+				*ptr++ = leaf[l].vCenter[k][c].x;
+				*ptr++ = leaf[l].vCenter[k][c].y;
+			}
+			pos[k] += (3 + c_size * 2);
+		}
+	}
+	for (int k = 0; k<num_of_classes;k++)
+		leafpointer[k].at<int>(row, num_leaf) = pos[k];
 }

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>qt_test</string>
+   <string>Object detection</string>
   </property>
   <property name="windowIcon">
    <iconset resource="qt_test.qrc">
@@ -137,6 +137,9 @@
         </item>
         <item row="1" column="2">
          <widget class="QTreeWidget" name="treeResults">
+          <property name="contextMenuPolicy">
+           <enum>Qt::ActionsContextMenu</enum>
+          </property>
           <property name="uniformRowHeights">
            <bool>true</bool>
           </property>
@@ -287,11 +290,15 @@
     <addaction name="actionOpen"/>
     <addaction name="actionDetect"/>
     <addaction name="actionBatch_detect"/>
+    <addaction name="actionBatch_detect_several_param"/>
     <addaction name="separator"/>
     <addaction name="actionAdd_positive"/>
     <addaction name="actionAdd_negative"/>
     <addaction name="actionRemove"/>
     <addaction name="actionDrop_All_results"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_detection_time"/>
+    <addaction name="actionLoad_rectangles"/>
    </widget>
    <widget class="QMenu" name="menuSetup">
     <property name="title">
@@ -300,6 +307,7 @@
     <addaction name="actionLoad_config_file"/>
     <addaction name="actionTrain"/>
     <addaction name="actionLoad_test_images"/>
+    <addaction name="actionSave_rectangles"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -308,6 +316,8 @@
     <addaction name="actionZoom_in_2"/>
     <addaction name="actionZoom_out_2"/>
     <addaction name="actionRefresh"/>
+    <addaction name="separator"/>
+    <addaction name="actionExpand_all"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -421,6 +431,9 @@
    <property name="text">
     <string>Add negative</string>
    </property>
+   <property name="shortcut">
+    <string>Alt+N</string>
+   </property>
   </action>
   <action name="actionRemove">
    <property name="icon">
@@ -438,6 +451,39 @@
    </property>
    <property name="text">
     <string>Drop All results</string>
+   </property>
+  </action>
+  <action name="actionSave_rectangles">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save rectangles</string>
+   </property>
+  </action>
+  <action name="actionSave_results">
+   <property name="text">
+    <string>Save results</string>
+   </property>
+  </action>
+  <action name="actionExport_detection_time">
+   <property name="text">
+    <string>Export detection time</string>
+   </property>
+  </action>
+  <action name="actionBatch_detect_several_param">
+   <property name="text">
+    <string>Batch detect several param</string>
+   </property>
+  </action>
+  <action name="actionLoad_rectangles">
+   <property name="text">
+    <string>Load rectangles</string>
+   </property>
+  </action>
+  <action name="actionExpand_all">
+   <property name="text">
+    <string>Expand all</string>
    </property>
   </action>
  </widget>

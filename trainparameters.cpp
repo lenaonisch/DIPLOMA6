@@ -7,6 +7,7 @@ TrainParameters::TrainParameters(QWidget *parent) :
     ui(new Ui::TrainParameters)
 {
     ui->setupUi(this);
+	ui->cbUseAllPositiveFromGUI->hide();
 }
 
 TrainParameters::~TrainParameters()

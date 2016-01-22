@@ -14,6 +14,8 @@
 #include <iostream>
 #include <time.h>
 
+#include <amp.h>
+
 #include <fstream>
 #include <string>
 

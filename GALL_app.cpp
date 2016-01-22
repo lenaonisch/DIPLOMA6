@@ -77,7 +77,7 @@ void GALL_app::loadConfig(string filename)
 		outpath = buffer;
 		// Scale factor for output image (default: 128)
 		in.getline(buffer,400);
-		in >> out_scale;
+		in >> crDetect.testParam.out_scale;
 		in.getline(buffer,400);
 		// Path to positive examples
 		in.getline(buffer,400);
@@ -86,7 +86,9 @@ void GALL_app::loadConfig(string filename)
 		// File with postive examples
 		in.getline(buffer,400);
 		in.getline(buffer,400);
-		trainposfiles = buffer;
+		string temp = buffer;
+		trainposfiles = configpath;
+		trainposfiles+=temp;
 		// Subset of positive images -1: all images
 		in.getline(buffer,400);
 		in >> subsamples_pos;
@@ -145,7 +147,7 @@ void GALL_app::loadConfig(string filename)
 	in.close();
 }
 
-void GALL_app::run_train()
+void GALL_app::run_train(int off_tree)
 {
 		// Init forest with number of trees
 	CRForest crForest( ntrees ); 
@@ -168,13 +170,12 @@ void GALL_app::run_train()
 			
 	// Extract training patches
 	extract_Patches(Train, &cvRNG);
-	CRForestDetector crDetect(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), &width_aver, &height_min, out_scale);
+	CRForestDetector crDetect(&crForest, p_width, p_height, TestParam(), &width_aver, &height_min);
 	crDetect.save((configpath + treepath + "forest_detector.txt").c_str());
 
 	// Train forest
 	string spath(configpath);
 	spath += treepath;
-	off_tree = 0;
 	crForest.trainForest(20, 15, &cvRNG, Train, binary_tests_iterations,spath.c_str(), off_tree);
 
 	//// Save forest
@@ -187,10 +188,11 @@ void GALL_app::run_train()
 void GALL_app::run_detect(bool& load_forest, map<string, Results>& results) {
 	if (!load_forest)
 	{
+		TestParam temp = crDetect.testParam;
 		loadForest();
+		crDetect.testParam = temp;
 		load_forest = true;
 	}
-
 	// run detector
 	for(map<string, Results>::iterator it = results.begin(); it != results.end(); ++it) {
 		if (!it->second.processed)
@@ -202,10 +204,11 @@ void GALL_app::run_detect(bool& load_forest, map<string, Results>& results) {
 void GALL_app::run_detect(bool& load_forest, string filename, Results& results) {
 	if (!load_forest)
 	{
+		TestParam temp = crDetect.testParam;
 		loadForest();
+		crDetect.testParam = temp;
 		load_forest = true;
 	}
-
 	// run detector
 	detect(crDetect,  filename, results);
 }
@@ -221,7 +224,7 @@ void GALL_app::loadForest()
 	crForest.loadForest(fpath.c_str());	
 
 	// Init detector
-	crDetect = CRForestDetector(&crForest, p_width, p_height, pow(1+num_of_classes, -0.66), out_scale, (configpath + treepath + "forest_detector.txt").c_str());
+	crDetect = CRForestDetector(&crForest, TestParam(), (configpath + treepath + "forest_detector.txt").c_str());
 	//crDetect.load((configpath + treepath + "forest_detector.txt").c_str());
 
 	// create directory for output
@@ -272,9 +275,7 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 								std::vector<int>& width_aver = vector<int>()) {
 
 	unsigned int size; 
-	string sfiles (configpath);
-	sfiles+=trainposfiles;
-	FILE * pFile = fopen (sfiles.c_str(),"r");
+	FILE * pFile = fopen (trainposfiles.c_str(),"r");
 	
 	if (pFile != NULL)
 	{
@@ -304,8 +305,9 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 					&vClassNums[i]);
 
 			vFilenames[i] = name;
-			vBBox[i].width -= vBBox[i].x; 
-			vBBox[i].height -= vBBox[i].y;
+			//temprorary commented
+			//vBBox[i].width -= vBBox[i].x; 
+			//vBBox[i].height -= vBBox[i].y;
 			/*vCenter[i].x = vBBox[i].width/2;
 			vCenter[i].y = vBBox[i].height/2;*/
 
@@ -329,10 +331,10 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 
 		if (fclose (pFile) != 0)
 		{
-			throw string_exception("Failed to close " + sfiles);
+			throw string_exception("Failed to close " + trainposfiles);
 		}
 	} else {
-		throw string_exception("File not found " + sfiles);
+		throw string_exception("File not found " + trainposfiles);
 	}
 }
 
@@ -363,9 +365,9 @@ void GALL_app::loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv:
 			if(numop>0) {
 				in >> vBBox[i].x; in >> vBBox[i].y; 
 				in >> vBBox[i].width;
-				vBBox[i].width -= vBBox[i].x; 
+				//vBBox[i].width -= vBBox[i].x; 
 				in >> vBBox[i].height;
-				vBBox[i].height -= vBBox[i].y;
+				//vBBox[i].height -= vBBox[i].y;
 
 				if(vBBox[i].width<p_width || vBBox[i].height<p_height) {
 					throw string_exception("Width or height are too small " + vFilenames[i]);
@@ -375,7 +377,7 @@ void GALL_app::loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv:
 
 		in.close();
 	} else {
-		throw string_exception("File not found " + trainposfiles);
+		throw string_exception("File not found " + trainnegfiles);
 	}
 }
 
@@ -403,6 +405,8 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	// Load image
 	cv::Mat img;
 	img = cv::imread(filename.c_str(),CV_LOAD_IMAGE_COLOR);
+	results.height = img.rows;
+	results.width = img.cols;
 	string short_name, ext;
 	getFilenameExt(filename, short_name, ext);
 	if(!img.data) {
@@ -411,19 +415,20 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	}
 
 	// Detection for all scales and classes
-	double* timers = crDetect.detectPyramid(img, scales, vImgDetect, results);
+	crDetect.detectPyramid(img, scales, vImgDetect, results);
 	results.processed = true;
 	filename = short_name;
 
 	// Store result
 	for(unsigned int k = 0; k < vImgDetect.size(); k++) {
 		for(unsigned int c = 0; c < vImgDetect[k].size(); ++c) {
-				
-			//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
-			// int k - scale, c - index of class
-			sprintf_s(buffer,"%s/%s_scale%f_%s.%s",(configpath + outpath).c_str(), short_name.c_str(), scales[k], classes[c].c_str(), ext.c_str());
-			cv::imwrite( buffer, vImgDetect[k][c] );
-
+			
+			if (crDetect.testParam.bSaveHoughSpace){
+				//vImgDetect[k][c].convertTo(tmp, CV_8UC1, out_scale);
+				// int k - scale, c - index of class
+				sprintf_s(buffer,"%s/%s_scale%f_%s.%s",(configpath + outpath).c_str(), short_name.c_str(), scales[k], classes[c].c_str(), ext.c_str());
+				cv::imwrite( buffer, vImgDetect[k][c] );
+			}
 			vImgDetect[k][c].release();
 				
 		}
@@ -545,12 +550,17 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	vector<cv::Point> vCenter;
 	vector<unsigned int> vClassNums; // to what class object belongs
 
+	ofstream outUnused(configpath+"/unused.txt");
+	ofstream outUsed(configpath+"/used.txt");
+
 	// load positive file list
 	if (width_aver.size() == 0)
 		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums, width_aver);
 	else
 		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums); // all images will be resized to one width pointed in config file
 
+	if (subsamples_pos > 0)
+		subsamples_pos = vFilenames.size()*subsamples_pos/100.0f;
 	// load postive images and extract patches
 	vCenter.resize(vFilenames.size());
 	for(int i=0; i<(int)vFilenames.size(); ++i) 
@@ -561,6 +571,11 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 	  {
 			// Load image
 			cv::Mat img;
+			if(outUsed.is_open())
+			{
+				outUsed<<vFilenames[i]<<" ";
+				outUsed<<vBBox[i].x<<" "<<vBBox[i].y<<" "<<vBBox[i].width<<" "<<vBBox[i].height<<" "<<vClassNums[i]<<endl;
+			}
 			string sfile (configpath+trainpospath + "/" + vFilenames[i]);
 			img = cv::imread(sfile.c_str(),CV_LOAD_IMAGE_COLOR);
 			if(!img.data) {
@@ -604,7 +619,20 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 			// Release image
 			img.release();
 			to_extract.release();
-	  }		
+	  }	
+		else
+		{
+			if(outUnused.is_open())
+			{
+				outUnused<<vFilenames[i]<<endl;
+			}
+		}
+	}
+	if(outUnused.is_open()){
+		outUnused.close();
+	}
+	if(outUsed.is_open()) {
+		outUsed.close();
 	}
 	//cout << endl;
 

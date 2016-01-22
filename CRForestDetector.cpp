@@ -126,10 +126,19 @@ int CRForestDetector::detectColor(cv::Mat img, vector<cv::Mat>& imgDetect, vecto
 	return timer;
 }
 
+inline bool hides(cv::Rect r1, cv::Rect r2, float persent)
+{
+	cv::Rect inters = r1&r2;
+	int a_r1 = r1.width*r1.height;
+	int a_r2 = r2.width*r2.height;
+	int a_int = inters.width*inters.height;
+	return (a_r1 < a_r2) ? (float)a_int/a_r1 > persent : (float)a_int/a_r2 > persent;
+}
+
 // img - input image
 // scales - scales to detect objects with different sizes
 // vImgDetect [0..scales], inside vector is for different classes
-double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat>>& vImgDetect, Results& result)
+void CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vector<vector<cv::Mat>>& vImgDetect, Results& result)
 {	
 	// [0] - summary time
 	// [1] - init. maps
@@ -138,8 +147,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 	// [4] - localMax function
 	// [5] - max. find other operations
 	// [6] - convert to Results
-	double timers [10] = {0,0,0,0,0,0,0,0,0,0};
-	double* t_ptr = &timers[0];
+	result.time = vector<float>(7);
 	int init_maps = 0, detecCol = 0, maxFind = 0, localmax = 0;
 	if(img.channels() == 1) 
 	{
@@ -147,7 +155,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 	} 
 	else 
 	{
-		timers[0] = clock();
+		result.time[0] = clock();
 
 		vImgDetect.resize(scales.size());
 
@@ -171,27 +179,25 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			vector<cv::Mat> ratios(num_of_classes);
 
 			init_maps = clock() - init_maps;
-			timers[1] += init_maps;
+			result.time[1] += init_maps;
 
 			// detection
 			detecCol = clock();
-			timers[2] += detectColor(cLevel, tmps, ratios);
+			result.time[2] += detectColor(cLevel, tmps, ratios);
 			detecCol = clock() - detecCol;
-			timers[3]+=detecCol;
-
-			int treshold = 150;
+			result.time[3] += detecCol;
 			
 			for (int c = 0; c < num_of_classes; c++) {
-				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, out_scale);
+				tmps[c].convertTo(vImgDetect[i][c], CV_8UC1, testParam.out_scale);
 				tmps[c].release();
 			}
 
 			
 			localmax = clock();
 			for (int c = 0; c < num_of_classes; c++)
-				localMaxima(vImgDetect[i][c], cv::Size(width_aver[c]*scales[i], height_min[c]*scales[i]), maxs, c, treshold);
+				localMaxima(vImgDetect[i][c], cv::Size(width_aver[c]*scales[i], height_min[c]*scales[i]), maxs, c, testParam.max_treshold);
 			localmax = clock() - localmax;
-			timers[4] = localmax;
+			result.time[4] = localmax;
 
 			maxFind = clock();
 			for (int k = maxs.size()-1; k>=max_index;k--)
@@ -206,7 +212,7 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 			max_index = maxs.size();
 
 			maxFind = clock()-maxFind;
-			timers[5]+=maxFind;
+			result.time[5]+=maxFind;
 
 			for (int z = 0; z < ratios.size(); z++)
 				ratios[z].release();
@@ -216,19 +222,45 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 		}
 
 		// convert to Results
-		timers[6] = clock();
-		for (int i = maxs.size()-1; i > 0; i--)
+		result.time[6] = clock();
+		ConvertToTesults(maxs, result);
+		result.time[6] = clock() - result.time[6];
+
+		maxs.clear();
+		//timers[0] = (double)(clock() - timers[0])/CLOCKS_PER_SEC;
+		result.time[0] = clock() - result.time[0];
+
+		for (int i = 0; i<result.time.size(); i++)
+			result.time[i] /= CLOCKS_PER_SEC;
+	}
+}
+
+void CRForestDetector::ConvertToTesults(vector<MaxPoint>& maxs,Results& result)
+{
+	for (int i = maxs.size()-1; i > 0; i--)
 		{
 			int cl = maxs[i].class_label;
-			int w = width_aver[cl];
+			int w = width_aver[cl]/maxs[i].scale;
 			int h = w*maxs[i].ratio;
 			cv::Rect rect(maxs[i].point.x-w/2, maxs[i].point.y-h/2, w,h);
 			for (int j = 0; j < i;j++)
 			{
-				if (rect.contains(maxs[j].point) && maxs[j].pf > maxs[i].pf)
+				int cl2 = maxs[j].class_label;
+				int w2 = width_aver[cl2]/maxs[j].scale;
+				int h2 = w2*maxs[j].ratio;
+				cv::Rect rect2(maxs[j].point.x-w2/2, maxs[j].point.y-h2/2, w2,h2);
+
+				if (hides(rect, rect2, 0.75f) )
 				{
-					maxs[i].pf = 0;
-					break;
+					if (maxs[j].pf > maxs[i].pf)
+					{
+						maxs[i].pf = 0;
+						break;
+					}
+					else
+					{
+						maxs[j].pf = 0;
+					}
 				}
 			}
 		}
@@ -242,17 +274,6 @@ double* CRForestDetector::detectPyramid(cv::Mat img, vector<float>& scales, vect
 				result.rects.push_back(cv::Rect(maxs[j].point.x - w/2, maxs[j].point.y - h/2, w, h));
 			}
 		}
-		timers[6] = clock() - timers[6];
-
-		maxs.clear();
-		//timers[0] = (double)(clock() - timers[0])/CLOCKS_PER_SEC;
-		timers[0] = clock() - timers[0];
-
-		for (int i = 0; i<10; i++)
-			timers[i] /= CLOCKS_PER_SEC;
-	}
-	result.time = timers[0];
-	return t_ptr;
 }
 
 int CRForestDetector::maxUsedValInHistogramData(cv::Mat src)

@@ -39,7 +39,6 @@ public:
 	float trainPart(){return ui->edtTrainPercent->value()/100.0;}
 	int binary_tests_iterations(){return (ui->edtBinaryTests->text()).toInt();}
 
-private:
     Ui::TrainParameters *ui;
 public slots:
 	void on_cbUseFluct_stateChanged();

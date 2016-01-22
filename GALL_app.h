@@ -18,7 +18,6 @@ public:
 	vector<float> scales;// Scales
 	vector<float> ratios;// Ratio
 	string outpath;	// Output path
-	int out_scale; // scale factor for output image (default: 128)
 	string trainpospath; 	// Path to positive examples
 	string train_rescaled_cropped_path;
 	string trainposfiles;	// File with postive examples
@@ -33,7 +32,6 @@ public:
 
 	bool* fluctparam;
 	bool useAllMarkedPos;
-
 	
 	vector<string> classes; //class names
 	vector<int> width_aver; // average width of training images for each class
@@ -50,7 +48,7 @@ public:
 
 	void loadConfig(string filename/*, int mode*/);
 	void loadForest();
-	void run_train();
+	void run_train(int off_tree = 0);
 	void run_detect(bool& load_forest, map<string, Results>& results);
 	void run_detect(bool& load_forest, string filename, Results& results);
 	void extract_Patches(CRPatch& Train, CvRNG* pRNG);
