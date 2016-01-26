@@ -109,6 +109,7 @@ inline void CRForest::loadForest(const char* filename) {
 	char buffer[200];
 	max_treetable_len = 0;
 	max_num_leaf = 0;
+	int max_center_count = 0;
 
 	uint trees = vTrees.size();
 	for(unsigned int i=0; i<trees; ++i) {
@@ -118,12 +119,14 @@ inline void CRForest::loadForest(const char* filename) {
 			max_treetable_len = vTrees[i]->treetable_count;
 		if (vTrees[i]->num_leaf > max_num_leaf)
 			max_num_leaf = vTrees[i]->num_leaf;
+		if (vTrees[i]->center_count > max_center_count)
+			max_center_count = vTrees[i]->center_count;
 	}
 
 	amp_treetable.create (trees, vTrees[0]->num_nodes*7, CV_32SC1);
 	amp_treetable_step1 = amp_treetable.step1();
 
-	amp_leafs.create (trees, 2 * vTrees[0]->center_count + max_num_leaf * num_of_classes * 3, CV_32SC1); 
+	amp_leafs.create (trees, 2 * max_center_count + max_num_leaf * num_of_classes * 3, CV_32SC1); 
 	amp_leafs_step = amp_leafs.step1(); 
 	amp_leafpointer.create (trees, max_num_leaf+1, CV_32SC1); // +1 - for last position in amp_leafs array
 	amp_leafpointer_step = amp_leafpointer.step1();
