@@ -270,7 +270,7 @@ void GALL_app::loadImFile(vector<std::string>& filenames) {
 // load positive training image filenames
 void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames, 
 								std::vector<cv::Rect>& vBBox, 
-								/*std::vector<cv::Point>& vCenter,*/
+								std::vector<cv::Point>& vCenter,
 								std::vector<unsigned int> & vClassNums,
 								std::vector<int>& width_aver = vector<int>()) {
 
@@ -283,7 +283,7 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 
 		bool w_aver = (width_aver.size() == 0);
 		vFilenames.resize(size);
-		//vCenter.resize(size);
+		vCenter.resize(size);
 		vBBox.resize(size);
 		vClassNums.resize(size);
 		if (w_aver)
@@ -297,17 +297,17 @@ void GALL_app::loadTrainPosFile(std::vector<string>& vFilenames,
 		for(unsigned int i = 0; i<size; i++) {
 			char name [300];
 			// Read filename
-			fscanf (pFile, " %s %i %i %i %i %i",
+			fscanf (pFile, " %s %i %i %i %i %i %i %i",
 					&name, 
 					&vBBox[i].x, &vBBox[i].y, 
 					&vBBox[i].width, &vBBox[i].height,
-					/*&vCenter[i].x, &vCenter[i].y,*/
+					&vCenter[i].x, &vCenter[i].y,
 					&vClassNums[i]);
 
 			vFilenames[i] = name;
 			//temprorary commented
-			//vBBox[i].width -= vBBox[i].x; 
-			//vBBox[i].height -= vBBox[i].y;
+			vBBox[i].width -= vBBox[i].x; 
+			vBBox[i].height -= vBBox[i].y;
 			/*vCenter[i].x = vBBox[i].width/2;
 			vCenter[i].y = vBBox[i].height/2;*/
 
@@ -438,7 +438,7 @@ void GALL_app::detect(CRForestDetector& crDetect, string filename, Results& resu
 	img.release();
 }
 
-void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output, float dx)
+void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, cv::Point center, vector<cv::Point>& centers, vector<cv::Mat>& output, float dx)
 {
 	int count = 1;
 	bool hor = false;
@@ -468,6 +468,7 @@ void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output,
 	}
 	
 	output.resize(count);
+	centers.resize(count);
 	int k = 0;
 	cv::Mat temp;
 	cv::resize(source, temp, cv::Size(), dx, dx);
@@ -475,25 +476,33 @@ void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output,
 	bbox.width *= dx;
 	bbox.x *= dx;
 	bbox.y *= dx; 
+	center.x*=dx;
+	center.y*=dx;
+	center = cv::Point(center.x-bbox.x, center.y-bbox.y);
+	centers[k] = center;
 	output[k++] = temp(bbox);
 
 	if (fluctparam[0]) // resize
 	{
+		centers[k] = cv::Point(center.x*0.95f,center.y*0.95f);
 		cv::resize(output[0], output[k++], cv::Size(), 0.95f, 0.95f);
+		centers[k] = cv::Point(center.x*1.05f,center.y*1.05f);
 		cv::resize(output[0], output[k++], cv::Size(), 1.05f, 1.05f);
 	}
 	if (fluctparam[1]) // rotate
 	{
-		cv::Point2f center(bbox.x+bbox.width/2.0f, bbox.y+bbox.height/2.0f);
-		cv::Mat rot1 = cv::getRotationMatrix2D(center, 5, 1.0);
-		cv::Mat rot2 = cv::getRotationMatrix2D(center, -5, 1.0);
+		cv::Point2f center_(bbox.x+bbox.width/2.0f, bbox.y+bbox.height/2.0f);
+		cv::Mat rot1 = cv::getRotationMatrix2D(center_, 5, 1.0);
+		cv::Mat rot2 = cv::getRotationMatrix2D(center_, -5, 1.0);
 		// adjust transformation matrix
-		rot1.at<double>(0,2) += bbox.width/2.0 - center.x;
-		rot1.at<double>(1,2) += bbox.height/2.0 - center.y;
-		rot2.at<double>(0,2) += bbox.width/2.0 - center.x;
-		rot2.at<double>(1,2) += bbox.height/2.0 - center.y;
+		rot1.at<double>(0,2) += bbox.width/2.0 - center_.x;
+		rot1.at<double>(1,2) += bbox.height/2.0 - center_.y;
+		rot2.at<double>(0,2) += bbox.width/2.0 - center_.x;
+		rot2.at<double>(1,2) += bbox.height/2.0 - center_.y;
 		
+		centers[k] = center;
 		cv::warpAffine(temp, output[k++], rot1, bbox.size());
+		centers[k] = center;
 		cv::warpAffine(temp, output[k++], rot2, bbox.size());
 
 		rot1.release();
@@ -505,10 +514,12 @@ void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output,
 		cv::Rect r = bbox;		
 		r.x -= 0.05*bbox.width;
 		if (r.x > 0){
+			centers[k] = cv::Point(center.x-0.05*bbox.width, center.y);
 			temp(r).copyTo(output[k++]);
 		}
 		r.x = bbox.x + 0.05*bbox.width;
 		if (r.x + bbox.width < temp.cols){
+			centers[k] = cv::Point(center.x+0.05*bbox.width, center.y);
 			temp(r).copyTo(output[k++]);
 		}
 	}
@@ -528,8 +539,10 @@ void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output,
 
 	if (fluctparam[4]) // flip hor.
 	{
-		for (int i = 0; i<k;i++)
+		for (int i = 0; i<k;i++){
+			centers[k+i] = cv::Point(bbox.width-center.x, center.y);
 			cv::flip(output[i], output[k+i], 1);
+		}
 	}
 	if (fluctparam[5]) // flip vert.
 	{
@@ -538,8 +551,10 @@ void GALL_app::Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output,
 			cv::flip(output[i], output[ptr+i], 0);
 	}
 	int i = output.size()-1;
-	while (output[i--].data == NULL)
+	while (output[i--].data == NULL){
+		centers.pop_back();
 		output.pop_back();
+	}
 }
 
 // Extract patches from training data
@@ -556,9 +571,9 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 
 	// load positive file list
 	if (width_aver.size() == 0)
-		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums, width_aver);
+		loadTrainPosFile(vFilenames, vBBox, vCenter, vClassNums, width_aver);
 	else
-		loadTrainPosFile(vFilenames, vBBox, /*vCenter,*/ vClassNums, width_aver); // all images will be resized to one width pointed in config file
+		loadTrainPosFile(vFilenames, vBBox, vCenter, vClassNums, width_aver); // all images will be resized to one width pointed in config file
 
 	if (subsamples_pos > 0)
 		subsamples_pos = vFilenames.size()*subsamples_pos/100.0f;
@@ -587,16 +602,17 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 			float dx = width_aver[vClassNums[i]]/(float)vBBox[i].width;
 			cv::Mat to_extract;
 			cv::resize(img(vBBox[i]), to_extract, cv::Size(), dx, dx);
-			vCenter[i].x = to_extract.cols/2;
-			vCenter[i].y = to_extract.rows/2;
+			//vCenter[i].x = to_extract.cols/2;
+			//vCenter[i].y = to_extract.rows/2;
 			if (to_extract.rows < height_min[vClassNums[i]])
 				height_min[vClassNums[i]] = to_extract.rows;
 
 			if (fluctparam != NULL)
 			{
 				vector<cv::Mat> output;
+				vector<cv::Point> centrs;
 				char buffer[200];
-				Fluctuate(img, vBBox[i], output, dx);
+				Fluctuate(img, vBBox[i], vCenter[i], centrs, output, dx);
 				bool write = true;
 				string short_name, ext;
 				getFilenameExt(vFilenames[i], short_name, ext);
@@ -604,10 +620,10 @@ void GALL_app::extract_Patches(CRPatch& Train, CvRNG* pRNG) {
 				{
 					if (write){
 						
-						sprintf_s(buffer,"%s_%d.%s",(configpath + train_rescaled_cropped_path + "/" + short_name).c_str(), z, ext.c_str());
+						sprintf_s(buffer,"%s_%d_%d.%s",(configpath + train_rescaled_cropped_path + "/" + short_name).c_str(), centrs[z].x, centrs[z].y, ext.c_str());
 						cv::imwrite(buffer, output[z]);
 					}
-					Train.extractPatches(output[z], samples_pos, vClassNums[i], &vCenter[i]);
+					Train.extractPatches(output[z], samples_pos, vClassNums[i], &centrs[z]);
 					output[z].release();
 				}
 				output.swap(vector<cv::Mat>());

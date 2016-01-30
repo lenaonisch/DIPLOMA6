@@ -280,9 +280,10 @@ void qt_test::on_actionLoad_rectangles_triggered()
 		std::vector<cv::Rect> vBBox; 
 		std::vector<unsigned int> vClassNums;
 		std::vector<int> width_aver;
+		vector<cv::Point> centers;
 		string temp = gall_forest_app.trainposfiles;
 		gall_forest_app.trainposfiles = filename;
-		gall_forest_app.loadTrainPosFile(vFilenames, vBBox, vClassNums, width_aver);
+		gall_forest_app.loadTrainPosFile(vFilenames, vBBox, centers, vClassNums, width_aver);
 		filepaths.clear();
 		positive.clear();
 		for (int i = 0; i<vFilenames.size();i++)

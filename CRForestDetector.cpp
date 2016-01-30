@@ -434,7 +434,8 @@ bool CRForestDetector::localMaxima(cv::Mat src, cv::Size size, std::vector<MaxPo
 				}
 				if (!skip)
 					locations.push_back(MaxPoint(col, row, dst.at<uchar>(row, col), class_label));
-				m0 = m0.mul(localWindowMask);
+				if (localWindowMask.rows<m0.rows && localWindowMask.cols<m0.cols)
+					m0 = m0.mul(localWindowMask);
 								//we can skip the values that we already made 0 by the above function
 				col+=sqrCenter.x;
 			}

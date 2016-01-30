@@ -57,7 +57,7 @@ public:
 	void loadTrainNegFile(std::vector<string>& vFilenames, std::vector<cv::Rect>& vBBox);
 	void loadTrainPosFile(std::vector<string>& vFilenames, 
 						  std::vector<cv::Rect>& vBBox, 
-						  /*std::vector<cv::Point>& vCenter,*/
+						  std::vector<cv::Point>& vCenter,
 						  std::vector<unsigned int> & vClassNums,
 						  std::vector<int>& width_aver);
 	void loadImFile(vector<std::string>& filenames);
@@ -98,7 +98,7 @@ public:
 		}
 		in_class.close();
 	}
-	void Fluctuate(cv::Mat source, cv::Rect bbox, vector<cv::Mat>& output, float dx);
+	void Fluctuate(cv::Mat source, cv::Rect bbox, cv::Point center, vector<cv::Point>& centers, vector<cv::Mat>& output, float dx);
 private:
 	void replace(string& str, string what, string to_what)
 	{
